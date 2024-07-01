@@ -182,5 +182,8 @@
     <ClInclude Include="src\tmuf.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="core\bulbtoys\git.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

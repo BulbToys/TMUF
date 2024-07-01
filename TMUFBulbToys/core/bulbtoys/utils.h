@@ -2,6 +2,8 @@
 #include <Windows.h>
 #include <unordered_map>
 
+#include "git.h"
+
 #define PROJECT_NAME "BulbToys"
 
 #define DIE() *((int*)0xDEAD) = 0

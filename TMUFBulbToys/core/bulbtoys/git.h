@@ -1,2 +1,2 @@
 #pragma once 
-#define GIT_REV_COUNT 24
+#define GIT_REV_COUNT 27
