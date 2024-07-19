@@ -36,6 +36,14 @@ class GUI
 
 	void Render();
 
+	enum struct PatchMode
+	{
+		Patch,
+		Unpatch,
+		Repatch,
+	};
+	void PatchVTables(PatchMode pm);
+
 	using DxEndSceneFn = long(__stdcall)(IDirect3DDevice9*);
 	static DxEndSceneFn ID3DDevice9_EndScene_;
 	static inline DxEndSceneFn* ID3DDevice9_EndScene = nullptr;
@@ -43,6 +51,10 @@ class GUI
 	using DxResetFn = long(__stdcall)(IDirect3DDevice9*, D3DPRESENT_PARAMETERS*);
 	static DxResetFn ID3DDevice9_Reset_;
 	static inline DxResetFn* ID3DDevice9_Reset = nullptr;
+
+	using DxBeginStateBlockFn = long(__stdcall)(IDirect3DDevice9*);
+	static DxBeginStateBlockFn ID3DDevice9_BeginStateBlock_;
+	static inline DxBeginStateBlockFn* ID3DDevice9_BeginStateBlock = nullptr;
 
 	static LRESULT CALLBACK WndProc(WNDPROC original_wndproc, HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	friend class IO; // Sadly necessary so the IO can call our WndProc (friend function will not work)
