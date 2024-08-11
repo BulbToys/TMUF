@@ -78,7 +78,7 @@ namespace stats
 
 				if (!stats)
 				{
-					auto trackmania = TMUF::GetTrackMania();
+					auto trackmania = TMUF::BulbToys_GetTrackMania();
 					if (trackmania)
 					{
 						auto gps = Read<TMUF::CGamePlayerScore*>(trackmania + 0x16C);

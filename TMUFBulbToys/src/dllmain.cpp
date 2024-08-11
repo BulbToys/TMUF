@@ -17,7 +17,7 @@ BOOL APIENTRY DllMain(HMODULE instance, DWORD reason, LPVOID)
 			{
 				IDirect3DDevice9* device = nullptr;
 
-				auto vision_viewport = TMUF::GetVisionViewportDX9();
+				auto vision_viewport = TMUF::BulbToys_GetVisionViewportDX9();
 				if (vision_viewport)
 				{
 					device = Read<IDirect3DDevice9*>(vision_viewport + 0x9F8);

@@ -6,25 +6,17 @@
 #include "../core/bulbtoys/utils.h"
 #include "../core/imgui/imgui.h"
 
-namespace ImGui
-{
-	struct TMUF_TextSlice
-	{
-		std::string str = "";
-		ImVec4 clr = ImVec4(.0f, .0f, .0f, .0f);
-
-		TMUF_TextSlice(std::string string, ImVec4 color) : str(string), clr(color) {}
-	};
-	std::vector<TMUF_TextSlice> TMUF_Parse(const char* text);
-
-	// Displays text according to TrackMania formatting rules. Unicode and certain TM formats are unsupported!
-	void TMUF_Text(const char* text);
-	void TMUF_TextEx(std::vector<TMUF_TextSlice>& slices, const char* tooltip = nullptr);
-}
-
 namespace TMUF
 {
-	FUNC(0x402F7B, void, __cdecl, j_j__free, void* Block);
+	/* ===== N A M E S P A C E S ===== */
+
+
+
+	/* ===== E N U M S ===== */
+
+
+
+	/* ===== S T R U C T S ===== */
 
 	template <typename T>
 	struct CFastBuffer
@@ -167,6 +159,28 @@ namespace TMUF
 		int field_10;
 	};
 
+	/* ===== C O N S T A N T S ===== */
+
+	// Globals
+	inline uintptr_t BulbToys_GetTrackMania() { return Read<uintptr_t>(0xD6A2A4); }
+
+	inline uintptr_t BulbToys_GetVisionViewportDX9() { return Read<uintptr_t>(0xD70C00); }
+
+	/* ===== F U N C T I O N S ===== */
+
+	FUNC(0x935660, CFastString*, __thiscall, CMwId_GetName, CMwId* mw_id, CFastString* string);
+
+	FUNC(0x5F8420, uintptr_t, __thiscall, CGameCtnApp_GetCurrentInputBindings, uintptr_t game_ctn_app, int zero);
+
+	FUNC(0x8F7D10, void, __thiscall, CInputBindingsConfig_ClearBindings, uintptr_t input_bindings_config, unsigned int action, int mw_id);
+	FUNC(0x8F7CC0, unsigned int, __thiscall, CInputBindingsConfig_FindAction, uintptr_t input_bindings_config, SInputActionDesc* input_action_desc);
+
+	/* ===== H E L P E R   F U N C S ===== */
+
+
+
+	/* ===== C O N S T E X P R   F U N C S ===== */
+
 	constexpr void SystemTimeToWin32SystemTime(SYSTEMTIME* win32_st, SSystemTime* st)
 	{
 		win32_st->wYear = st->y;
@@ -197,21 +211,21 @@ namespace TMUF
 		st->h_m_s_ms = v4;
 		st->h_m_s_ms = v4 ^ (v4 ^ (win32_st->wMilliseconds << 17)) & 0x7FE0000;
 	}
+}
 
-	inline uintptr_t GetTrackMania()
+/* ===== I M G U I ===== */
+namespace ImGui
+{
+	struct TMUF_TextSlice
 	{
-		return Read<uintptr_t>(0xD6A2A4);
-	}
+		std::string str = "";
+		ImVec4 clr = ImVec4(.0f, .0f, .0f, .0f);
 
-	inline uintptr_t GetVisionViewportDX9()
-	{
-		return Read<uintptr_t>(0xD70C00);
-	}
+		TMUF_TextSlice(std::string string, ImVec4 color) : str(string), clr(color) {}
+	};
+	std::vector<TMUF_TextSlice> TMUF_Parse(const char* text);
 
-	FUNC(0x935660, CFastString*, __thiscall, CMwId_GetName, CMwId* mw_id, CFastString* string);
-
-	FUNC(0x5F8420, uintptr_t, __thiscall, CGameCtnApp_GetCurrentInputBindings, uintptr_t game_ctn_app, int zero);
-
-	FUNC(0x8F7D10, void, __thiscall, CInputBindingsConfig_ClearBindings, uintptr_t input_bindings_config, unsigned int action, int mw_id);
-	FUNC(0x8F7CC0, unsigned int, __thiscall, CInputBindingsConfig_FindAction, uintptr_t input_bindings_config, SInputActionDesc* input_action_desc);
+	// Displays text according to TrackMania formatting rules. Unicode and certain TM formats are unsupported!
+	void TMUF_Text(const char* text);
+	void TMUF_TextEx(std::vector<TMUF_TextSlice>& slices, const char* tooltip = nullptr);
 }

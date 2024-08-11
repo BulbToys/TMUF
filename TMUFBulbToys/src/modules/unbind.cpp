@@ -7,7 +7,7 @@ namespace unbind
 	{
 		virtual bool Draw() override final
 		{
-			auto trackmania = TMUF::GetTrackMania();
+			auto trackmania = TMUF::BulbToys_GetTrackMania();
 			if (trackmania)
 			{
 				if (ImGui::BulbToys_Menu("Unbind Control"))
