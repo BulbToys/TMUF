@@ -69,13 +69,13 @@ bool BulbToys::Init(BulbToys::SetupParams& params, bool thread)
 	// Settings
 	Settings::Get(params.settings_file);
 
-	// Modules
-	Modules::Init();
-
 	IDirect3DDevice9* device = nullptr;
 
 	if (!params.GetDevice)
 	{
+		// Modules (No UI)
+		Modules::Init();
+
 		// Partial success - no IO or GUI
 		return true;
 	}
@@ -91,6 +91,9 @@ bool BulbToys::Init(BulbToys::SetupParams& params, bool thread)
 	{
 		if (!(device = params.GetDevice()))
 		{
+			// Modules (No UI)
+			Modules::Init();
+
 			// Partial success - no IO or GUI
 			return true;
 		}
@@ -109,11 +112,21 @@ bool BulbToys::Init(BulbToys::SetupParams& params, bool thread)
 		GUI::Get(device, window);
 	}
 
+	// Modules
+	Modules::Init();
+
 	return true;
 }
 
 void BulbToys::End()
 {
+	auto io = IO::Get();
+	if (io)
+	{
+		// Modules
+		Modules::End();
+	}
+
 	// GUI
 	auto gui = GUI::Get();
 	if (gui)
@@ -122,15 +135,16 @@ void BulbToys::End()
 	}
 
 	// IO
-	auto io = IO::Get();
 	if (io)
 	{
 		io->End();
 	}
-
-	// Modules
-	Modules::End();
-
+	else
+	{
+		// Modules (No UI)
+		Modules::End();
+	}
+	
 	// Settings
 	auto settings = Settings::Get();
 	if (settings)
@@ -141,12 +155,14 @@ void BulbToys::End()
 	// Hooks
 	if (Hooks::End() != MH_OK)
 	{
+		// No need for an assert, the function already prints out an error
 		DIE();
 	}
 
 	// Final sanity check to make sure all our patches and hooks are gone
 	if (!PatchInfo::SanityCheck())
 	{
+		// No need for an assert, the function already prints out an error
 		DIE();
 	}
 }

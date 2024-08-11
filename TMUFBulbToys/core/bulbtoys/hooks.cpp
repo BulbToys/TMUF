@@ -50,6 +50,8 @@ bool Hooks::Create(uintptr_t address, void* hook, void* call = nullptr)
 
 bool Hooks::Destroy(void* address)
 {
+	Unpatch(reinterpret_cast<uintptr_t>(address));
+
 	auto status = MH_DisableHook(address);
 	if (status != MH_OK)
 	{
@@ -64,7 +66,6 @@ bool Hooks::Destroy(void* address)
 		return false;
 	}
 
-	Unpatch(reinterpret_cast<uintptr_t>(address));
 	return true;
 }
 

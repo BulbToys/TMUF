@@ -30,6 +30,34 @@ GUI::Overlay::~Overlay()
 
 void GUI::Overlay::Render()
 {
+	// FPS counter
+	static uint32_t fps = 0;
+	bool update = false;
+
+	static LARGE_INTEGER frequency = []() {
+		LARGE_INTEGER frequency;
+		QueryPerformanceFrequency(&frequency);
+		return frequency;
+	}();
+
+	LARGE_INTEGER counter;
+	QueryPerformanceCounter(&counter);
+	static LARGE_INTEGER old_counter = counter;
+
+	static uint32_t frame_count = 0;
+	if (counter.QuadPart - old_counter.QuadPart >= frequency.QuadPart)
+	{
+		old_counter = counter;
+		fps = frame_count;
+		frame_count = 0;
+
+		update = true;
+	}
+	else
+	{
+		frame_count++;
+	}
+
 	RECT rect;
 	GetClientRect(IO::Get()->Window(), &rect);
 	float w = rect.right - rect.left;
@@ -41,7 +69,7 @@ void GUI::Overlay::Render()
 		ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoBackground))
 	{
 		// Splash logo
-		ImGui::Text("Powered by BulbToys %d - Built on " __DATE__ " " __TIME__, GIT_REV_COUNT + 1);
+		ImGui::Text("%d FPS | Powered by BulbToys %d - Built on " __DATE__ " " __TIME__, fps, GIT_REV_COUNT + 1);
 
 		// Overlay panels
 		auto iter = panels.begin();
@@ -487,7 +515,7 @@ bool MainWindow::Draw()
 			{
 				auto str = settings->VKToStr(i);
 
-				if (strcmp(str, "(none)"))
+				if (strcmp(str, INVALID_KEY))
 				{
 					ImGui::Text("%-3d = %s", i, str);
 				}

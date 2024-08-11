@@ -19,7 +19,8 @@ namespace Hooks
 	void VTablePatch(uintptr_t vtbl_func_addr, void* hook, void* call);
 }
 
-// For use with the HOOK() macro
+// Undo: Hooks::Destroy(addr);
 #define CREATE_HOOK(name) Hooks::Create(name, &name##_##, &name)
+
+// Undo: Unpatch(addr);
 #define CREATE_VTABLE_PATCH(addr, name) Hooks::VTablePatch(addr, &name##_##, &name)
-#define DESTROY_HOOK(name) Hooks::Destroy(name)

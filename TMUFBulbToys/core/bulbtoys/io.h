@@ -21,13 +21,17 @@ public:
 	public:
 		Hotkey(OnKeyDownFn* OnKeyDown = nullptr, OnKeyUpFn* OnKeyUp = nullptr) : OnKeyDown(OnKeyDown), OnKeyUp(OnKeyUp)
 		{
-			if (OnKeyDown)
+			auto io = IO::Get();
+			if (io)
 			{
-				IO::Get()->on_key_down[key.Get()].push_back(OnKeyDown);
-			}
-			if (OnKeyUp)
-			{
-				IO::Get()->on_key_up[key.Get()].push_back(OnKeyUp);
+				if (OnKeyDown)
+				{
+					io->on_key_down[key.Get()].push_back(OnKeyDown);
+				}
+				if (OnKeyUp)
+				{
+					io->on_key_up[key.Get()].push_back(OnKeyUp);
+				}
 			}
 		}
 		~Hotkey()
@@ -46,17 +50,14 @@ public:
 	};
 private:
 	static inline IO* instance = nullptr;
-
 	bool done = false;
-
-	WNDPROC original_wndproc = nullptr;
 	HWND window = 0;
-
 	bool key_held[256] { false };
 
 	IO(HWND window);
 	~IO();
 
+	WNDPROC original_wndproc = nullptr;
 	static LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 public:
 	static IO* Get(HWND window = 0);

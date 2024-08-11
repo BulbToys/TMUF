@@ -4,8 +4,15 @@
 #define MINI_CASE_SENSITIVE
 #include "../mini/ini.h"
 
+#include <format>
+
+#define INVALID_KEY "(invalid)"
+
 class Settings
 {
+	const char* filename;
+
+	static inline std::vector<std::pair<const char*, const char*>> key_settings;
 	static inline mINI::INIStructure ini;
 	static inline Settings* instance = nullptr;
 
@@ -14,6 +21,9 @@ class Settings
 
 	Settings(const char* filename);
 	~Settings();
+
+	void InitKeyMap();
+	void DeleteKeyMap();
 public:
 	static Settings* Get(const char* filename = nullptr);
 	void End();
@@ -201,11 +211,14 @@ public:
 	class Key
 	{
 		inline static bool init = []() {
+			// Key settings need special attention, check the Settings constructor for more info
+			Settings::key_settings.push_back({ section.str, key.str });
+
 			// 1. Can't call VKToStr() here, because our Settings have not been initialized yet
 			// 2. Key map is localized based on whichever language keyboard input you had selected on Windows when BulbToys Settings were initialized
 			//    To maintain compatibility between systems which may have different language keyboard inputs it's better to save the VK code instead
 			//    For ease of use, we will allow conversion from the key name to the VK code upon reading the setting (construction of Settings::Key)
-			Settings::ini[section.str][key.str] = std::to_string(default_value);
+			Settings::ini[section.str][key.str] = std::format("{:#02x}", default_value);
 			return true;
 		}();
 		uint8_t value = default_value;
@@ -215,13 +228,14 @@ public:
 			auto settings = Settings::Get();
 			if (settings)
 			{
-				value = settings->StrToVK(Settings::ini[section.str][key.str].c_str());
-				if (!value)
+				// We save and parse VK codes in hexadecimal to avoid collisions with actual keys
+				// This conversion was done in the constructor of Settings, for the reasons listed there
+				// For example, VK_BACK (for backspace) is 8, will be misinterpreted by the "8" key, so we save 0x08 instead
+				// We can't check for the VK code before the actual key because we get the inverse problem ("8" key will turn into backspace)
+				// This silly mistake cost me 4 hours of debugging and trying to figure out why my key binds weren't working and why key vectors were empty :3
+				if (sscanf_s(Settings::ini[section.str][key.str].c_str(), "0x%02hhx", &value) != 1)
 				{
-					if (sscanf_s(Settings::ini[section.str][key.str].c_str(), "%hhu", &value) != 1)
-					{
-						value = default_value;
-					}
+					value = default_value;
 				}
 			}
 		}
