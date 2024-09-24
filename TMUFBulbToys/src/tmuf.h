@@ -241,6 +241,7 @@ namespace ImGui
 	void TMUF_Text(const char* text);
 	void TMUF_TextEx(std::vector<TMUF_TextSlice>& slices, const char* tooltip = nullptr);
 
+	// CFastString equivalent of ImGui::InputText
 	void TMUF_InputFastString(TMUF::CFastString& fast_string, const char* label, char* buf, size_t buf_size, ImGuiInputTextFlags flags = 0,
 		ImGuiInputTextCallback callback = NULL, void* user_data = NULL);
 }

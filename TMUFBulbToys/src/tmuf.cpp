@@ -232,17 +232,16 @@ std::vector<ImGui::TMUF_TextSlice> ImGui::TMUF_Parse(const char* text)
 		}
 	}
 
-	// account for the last row
+	// account for the last hanging '$', if any
 	if (last_string_empty)
 	{
 		slices.back().str.append("$");
 	}
 
+	// god that was exhausting
 	return slices;
 }
 
-// i'd rather fucking kill myself than learn to regex this shit
-// NO UNICODE SUPPORT - if you get a bunch of question marks after this, good luck and godspeed o7
 void ImGui::TMUF_Text(const char* text)
 {
 	auto slices = ImGui::TMUF_Parse(text);
@@ -252,7 +251,6 @@ void ImGui::TMUF_Text(const char* text)
 
 void ImGui::TMUF_TextEx(std::vector<ImGui::TMUF_TextSlice>& slices, const char* tooltip)
 {
-	// god that was exhausting - build this motherfucker already
 	bool after_first = false;
 	for (auto& slice : slices)
 	{
@@ -261,8 +259,9 @@ void ImGui::TMUF_TextEx(std::vector<ImGui::TMUF_TextSlice>& slices, const char* 
 		{
 			ImGui::SameLine(0, 0);
 		}
+		after_first = true;
 
-		// we set alpha to 0, which means this text has no specific color
+		// we've set alpha to 0, which means this text has no specific color
 		// there's no good answer here - in-game, sometimes it's white, blue, yellow, dark gray etc... so we just use the ImGui default
 		if (slice.clr.w == .0f)
 		{
@@ -281,12 +280,11 @@ void ImGui::TMUF_TextEx(std::vector<ImGui::TMUF_TextSlice>& slices, const char* 
 				ImGui::SetTooltip("%s", tooltip);
 			}
 		}
-
-		after_first = true;
 	}
 }
 
-void ImGui::TMUF_InputFastString(TMUF::CFastString& fast_string, const char* label, char* buf, size_t buf_size, ImGuiInputTextFlags flags, ImGuiInputTextCallback callback, void* user_data)
+void ImGui::TMUF_InputFastString(TMUF::CFastString& fast_string, const char* label, char* buf, size_t buf_size, ImGuiInputTextFlags flags,
+	ImGuiInputTextCallback callback, void* user_data)
 {
 	// copy fast string to our text box
 	MYPRINTF(buf, buf_size, "%s", fast_string.psz);
