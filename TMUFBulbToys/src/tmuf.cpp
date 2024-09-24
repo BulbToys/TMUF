@@ -285,3 +285,18 @@ void ImGui::TMUF_TextEx(std::vector<ImGui::TMUF_TextSlice>& slices, const char* 
 		after_first = true;
 	}
 }
+
+void ImGui::TMUF_InputFastString(TMUF::CFastString& fast_string, const char* label, char* buf, size_t buf_size, ImGuiInputTextFlags flags, ImGuiInputTextCallback callback, void* user_data)
+{
+	// copy fast string to our text box
+	MYPRINTF(buf, buf_size, "%s", fast_string.psz);
+
+	// then invoke the text box
+	ImGui::InputText(label, buf, buf_size, flags, callback, user_data);
+
+	// finally, copy the text from our text box if changed
+	if (strcmp(buf, fast_string.psz))
+	{
+		fast_string.SetString(strlen(buf), buf);
+	}
+}

@@ -40,6 +40,11 @@ namespace TMUF
 		{
 			reinterpret_cast<void(__thiscall*)(CFastString*)>(0x4683E0)(this);
 		}
+
+		void SetString(int len, const char* str)
+		{
+			reinterpret_cast<void(__thiscall*)(CFastString*, int, const char*)>(0x440DC0)(this, len, str);
+		}
 	};
 
 	struct CFastStringInt
@@ -115,7 +120,6 @@ namespace TMUF
 		unsigned int unkNat32_n;
 	};
 
-
 	struct CGamePlayerScore
 	{
 		void* __vftable;
@@ -157,6 +161,14 @@ namespace TMUF
 		CFastString name;
 		int field_C;
 		int field_10;
+	};
+
+	struct CIPCRemoteControl_SAuthParams
+	{
+		CFastString _Name;
+		CFastString _Password;
+		unsigned int _Level;
+		__int16 _unk;
 	};
 
 	/* ===== C O N S T A N T S ===== */
@@ -228,4 +240,7 @@ namespace ImGui
 	// Displays text according to TrackMania formatting rules. Unicode and certain TM formats are unsupported!
 	void TMUF_Text(const char* text);
 	void TMUF_TextEx(std::vector<TMUF_TextSlice>& slices, const char* tooltip = nullptr);
+
+	void TMUF_InputFastString(TMUF::CFastString& fast_string, const char* label, char* buf, size_t buf_size, ImGuiInputTextFlags flags = 0,
+		ImGuiInputTextCallback callback = NULL, void* user_data = NULL);
 }
