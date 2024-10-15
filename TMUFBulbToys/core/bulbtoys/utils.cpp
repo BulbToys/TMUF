@@ -15,7 +15,7 @@ void IFileBase::Save(const char* filename)
 		sprintf_s(msg, 512, "Error saving file %s.\n\n"
 			"The object you are trying to save has failed to validate, indicating it contains invalid (corrupt or otherwise unsafe) values.\n\nProceed?", filename);
 
-		if (MessageBoxA(NULL, msg, PROJECT_NAME, MB_ICONWARNING | MB_YESNO) != IDYES)
+		if (MessageBoxA(NULL, msg, PROJECT_NAME, MB_ICONWARNING | MB_YESNO | MB_SYSTEMMODAL) != IDYES)
 		{
 			return;
 		}
@@ -80,7 +80,7 @@ bool IFileBase::Load(const char* filename, bool allow_undersize)
 			sprintf_s(msg, 512, "Error opening file %s.\n\n"
 				"The object you are trying to load has failed to validate, indicating it contains invalid (corrupt or otherwise unsafe) values.\n\nProceed?", filename);
 
-			if (MessageBoxA(NULL, msg, PROJECT_NAME, MB_ICONWARNING | MB_YESNO) != IDYES)
+			if (MessageBoxA(NULL, msg, PROJECT_NAME, MB_ICONWARNING | MB_YESNO | MB_SYSTEMMODAL) != IDYES)
 			{
 				return false;
 			}
@@ -196,7 +196,7 @@ void Error(const char* message, ...)
 	va_start(va, message);
 	vsprintf_s(buffer, 1024, message, va);
 
-	MessageBoxA(NULL, buffer, PROJECT_NAME, MB_ICONERROR);
+	MessageBoxA(NULL, buffer, PROJECT_NAME, MB_ICONERROR | MB_SYSTEMMODAL);
 }
 
 void PatchNOP(uintptr_t address, int count)
