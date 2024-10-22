@@ -10,7 +10,7 @@ namespace test
 			auto trackmania = TMUF::BulbToys_GetTrackMania();
 			if (trackmania)
 			{
-				if (ImGui::BulbToys_Menu("Features Test"))
+				if (ImGui::BulbToys_Menu("Test Features"))
 				{
 					auto network = Read<uintptr_t>(trackmania + 0x12C);
 					auto master_server = Read<uintptr_t>(network + 0x1B0);
@@ -54,10 +54,14 @@ namespace test
 							ImGui::EndTable();
 						}
 					}
+					else
+					{
+						ImGui::Text("No features found");
+					}
 				}
 			}
 
-			if (ImGui::BulbToys_Menu("Format Test"))
+			if (ImGui::BulbToys_Menu("Test Format"))
 			{
 				char string[128] { 0 };
 
@@ -65,7 +69,7 @@ namespace test
 				ImGui::TMUF_Text(string);
 			}
 
-			if (ImGui::BulbToys_Menu("Time Test"))
+			if (ImGui::BulbToys_Menu("Test Time"))
 			{
 				SYSTEMTIME st;
 				GetLocalTime(&st);

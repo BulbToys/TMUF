@@ -82,33 +82,36 @@ namespace stats
 					if (trackmania)
 					{
 						auto gps = Read<TMUF::CGamePlayerScore*>(trackmania + 0x16C);
-						count = gps->_Challenges.size;
-
-						if (count > 0)
+						if (gps)
 						{
-							stats = new Stat[count];
+							count = gps->_Challenges.size;
 
-							for (int i = 0; i < count; i++)
+							if (count > 0)
 							{
-								auto score = gps->_Challenges.pElems[i];
-								
-								WideStringToString(score->_TrackName.pwsz, score->_TrackName.size, stats[i].name_raw, 64);
+								stats = new Stat[count];
 
-								stats[i].slices = ImGui::TMUF_Parse(stats[i].name_raw);
-								for (auto& slice : stats[i].slices)
+								for (int i = 0; i < count; i++)
 								{
-									stats[i].name_clean.append(slice.str);
+									auto score = gps->_Challenges.pElems[i];
+
+									WideStringToString(score->_TrackName.pwsz, score->_TrackName.size, stats[i].name_raw, 64);
+
+									stats[i].slices = ImGui::TMUF_Parse(stats[i].name_raw);
+									for (auto& slice : stats[i].slices)
+									{
+										stats[i].name_clean.append(slice.str);
+									}
+
+									TMUF::CMwId_GetName(&score->_AuthorNameID, &stats[i].author);
+									TMUF::CMwId_GetName(&score->_EnvironmentNameID, &stats[i].envi);
+
+									stats[i].total_time = score->_EditPlayTime + score->_RacePlayTime + score->_NetPlayTime;
+									stats[i].edit_time = score->_EditPlayTime;
+									stats[i].race_time = score->_RacePlayTime;
+									stats[i].net_time = score->_NetPlayTime;
+									stats[i].reset_count = score->_TotalResetCount;
+									stats[i].finish_count = score->_TotalFinishCount;
 								}
-
-								TMUF::CMwId_GetName(&score->_AuthorNameID, &stats[i].author);
-								TMUF::CMwId_GetName(&score->_EnvironmentNameID, &stats[i].envi);
-
-								stats[i].total_time = score->_EditPlayTime + score->_RacePlayTime + score->_NetPlayTime;
-								stats[i].edit_time = score->_EditPlayTime;
-								stats[i].race_time = score->_RacePlayTime;
-								stats[i].net_time = score->_NetPlayTime;
-								stats[i].reset_count = score->_TotalResetCount;
-								stats[i].finish_count = score->_TotalFinishCount;
 							}
 						}
 					}
