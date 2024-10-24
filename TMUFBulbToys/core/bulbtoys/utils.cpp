@@ -189,16 +189,6 @@ bool PatchInfo::SanityCheck()
 	return true;
 }
 
-void Error(const char* message, ...)
-{
-	char buffer[1024];
-	va_list va;
-	va_start(va, message);
-	vsprintf_s(buffer, 1024, message, va);
-
-	MessageBoxA(NULL, buffer, PROJECT_NAME, MB_ICONERROR | MB_SYSTEMMODAL);
-}
-
 void PatchNOP(uintptr_t address, int count)
 {
 	new PatchInfo(address, count);

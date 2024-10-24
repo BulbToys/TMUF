@@ -98,30 +98,7 @@ void ImGui::BulbToys_AddyLabel(uintptr_t addy, const char* fmt, ...)
 	ImGui::SameLine();
 	if (ImGui::Button(button))
 	{
-		auto mem = GlobalAlloc(GMEM_MOVEABLE, 9);
-		if (!mem)
-		{
-			return;
-		}
-
-		auto ptr = GlobalLock(mem);
-		if (!ptr)
-		{
-			GlobalFree(mem);
-			return;
-		}
-
-		char addy_str[9];
-		sprintf_s(addy_str, 9, "%08X", addy);
-		memcpy(ptr, addy_str, 9);
-		GlobalUnlock(mem);
-
-		OpenClipboard(IO::Get()->Window());
-		EmptyClipboard();
-		SetClipboardData(CF_TEXT, mem);
-		CloseClipboard();
-
-		// The clipboard calls GlobalFree for us, no need to do it ourselves
+		CopyToClipboard<9>("%08X", addy);
 	}
 }
 
