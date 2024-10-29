@@ -9,11 +9,11 @@ namespace profile
 		{
 			if (ImGui::BulbToys_Menu("Profile"))
 			{
-				uintptr_t unk = Read<uintptr_t>(TMUF::BulbToys_GetTrackMania() + 0x168);
-				if (unk)
+				uintptr_t profile = Read<uintptr_t>(TMUF::BulbToys_GetTrackMania() + 0x168);
+				if (profile)
 				{
 					ImGui::Text("Trail Color:");
-					uintptr_t trail_color_ptr = unk + 0x23C;
+					uintptr_t trail_color_ptr = profile + 0x23C;
 					TMUF::GmVec3 trail_color = Read<TMUF::GmVec3>(trail_color_ptr);
 					if (ImGui::SliderFloat3("##TrailColor", reinterpret_cast<float*>(&trail_color), 0.0f, 1.0f))
 					{
