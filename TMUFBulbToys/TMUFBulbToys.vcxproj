@@ -176,6 +176,7 @@
     <ClCompile Include="core\minhook\trampoline.c" />
     <ClCompile Include="src\dllmain.cpp" />
     <ClCompile Include="src\modules\ghosts.cpp" />
+    <ClCompile Include="src\modules\profile.cpp" />
     <ClCompile Include="src\modules\server.cpp" />
     <ClCompile Include="src\modules\test.cpp" />
     <ClCompile Include="src\modules\stats.cpp" />

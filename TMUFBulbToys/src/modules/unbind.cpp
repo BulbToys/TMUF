@@ -7,31 +7,27 @@ namespace unbind
 	{
 		virtual bool Draw() override final
 		{
-			auto trackmania = TMUF::BulbToys_GetTrackMania();
-			if (trackmania)
+			if (ImGui::BulbToys_Menu("Unbind Control"))
 			{
-				if (ImGui::BulbToys_Menu("Unbind Control"))
+				auto input_bindings = TMUF::CGameCtnApp_GetCurrentInputBindings(TMUF::BulbToys_GetTrackMania(), 0);
+				if (input_bindings)
 				{
-					auto input_bindings = TMUF::CGameCtnApp_GetCurrentInputBindings(trackmania, 0);
-					if (input_bindings)
+					for (int i = 0; i < 47; i++)
 					{
-						for (int i = 0; i < 47; i++)
+						if (i == 11 || i == 12 || i == 45 || i == 46)
 						{
-							if (i == 11 || i == 12 || i == 45 || i == 46)
-							{
-								continue;
-							}
+							continue;
+						}
 
-							auto input_action_desc = Read<TMUF::SInputActionDesc*>(0xCD5F58 + (i * 4));
+						auto input_action_desc = Read<TMUF::SInputActionDesc*>(0xCD5F58 + (i * 4));
 
-							char button[64];
-							MYPRINTF(button, 64, "%s" "##%p", input_action_desc->name.psz, input_action_desc);
-							if (ImGui::Button(button))
-							{
-								auto action = TMUF::CInputBindingsConfig_FindAction(input_bindings, input_action_desc);
+						char button[64];
+						MYPRINTF(button, 64, "%s" "##%p", input_action_desc->name.psz, input_action_desc);
+						if (ImGui::Button(button))
+						{
+							auto action = TMUF::CInputBindingsConfig_FindAction(input_bindings, input_action_desc);
 
-								TMUF::CInputBindingsConfig_ClearBindings(input_bindings, action, Read<int>(0xD75044));
-							}
+							TMUF::CInputBindingsConfig_ClearBindings(input_bindings, action, Read<int>(0xD75044));
 						}
 					}
 				}

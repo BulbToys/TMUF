@@ -68,6 +68,13 @@ namespace TMUF
 		int value;
 	};
 
+	struct GmVec3
+	{
+		float x;
+		float y;
+		float z;
+	};
+
 	struct SSystemTime
 	{
 		unsigned __int16 y;

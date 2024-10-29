@@ -8,62 +8,60 @@ namespace test
 		virtual bool Draw() override final
 		{
 			auto trackmania = TMUF::BulbToys_GetTrackMania();
-			if (trackmania)
+
+			if (ImGui::BulbToys_Menu("Test Features"))
 			{
-				if (ImGui::BulbToys_Menu("Test Features"))
+				auto network = Read<uintptr_t>(trackmania + 0x12C);
+				auto master_server = Read<uintptr_t>(network + 0x1B0);
+				auto features = reinterpret_cast<TMUF::CFastBuffer<TMUF::CGameMasterServer_SFeature>*>(master_server + 0x2B0);
+				auto count = features->size;
+
+				if (count > 0)
 				{
-					auto network = Read<uintptr_t>(trackmania + 0x12C);
-					auto master_server = Read<uintptr_t>(network + 0x1B0);
-					auto features = reinterpret_cast<TMUF::CFastBuffer<TMUF::CGameMasterServer_SFeature>*>(master_server + 0x2B0);
-					auto count = features->size;
-
-					if (count > 0)
+					if (ImGui::BeginTable("FeatureTable", 3, ImGuiTableFlags_SizingFixedFit))
 					{
-						if (ImGui::BeginTable("FeatureTable", 3, ImGuiTableFlags_SizingFixedFit))
+						// todo implement two-way sorting (asc and desc)
+						ImGui::TableNextRow();
+						ImGui::TableSetColumnIndex(0);
+						ImGui::Text("#");
+						ImGui::TableSetColumnIndex(1);
+						ImGui::Text("Feature");
+						ImGui::TableSetColumnIndex(2);
+						ImGui::Text("Value");
+
+						for (int row = 0; row < count; row++)
 						{
-							// todo implement two-way sorting (asc and desc)
+							auto feature = features->pElems[row];
+
+							TMUF::CFastString name;
+							TMUF::CMwId_GetName(&feature._ID, &name);
+
 							ImGui::TableNextRow();
-							ImGui::TableSetColumnIndex(0);
-							ImGui::Text("#");
-							ImGui::TableSetColumnIndex(1);
-							ImGui::Text("Feature");
-							ImGui::TableSetColumnIndex(2);
-							ImGui::Text("Value");
-
-							for (int row = 0; row < count; row++)
+							for (int column = 0; column < 3; column++)
 							{
-								auto feature = features->pElems[row];
+								ImGui::TableSetColumnIndex(column);
 
-								TMUF::CFastString name;
-								TMUF::CMwId_GetName(&feature._ID, &name);
-
-								ImGui::TableNextRow();
-								for (int column = 0; column < 3; column++)
+								switch (column)
 								{
-									ImGui::TableSetColumnIndex(column);
-
-									switch (column)
-									{
-									case 0: ImGui::Text("%d", row + 1); break;
-									case 1: ImGui::Text("%s", name.psz); break;
-									case 2: ImGui::Text("%d", feature._Value); break;
-									default: break;
-									}
+								case 0: ImGui::Text("%d", row + 1); break;
+								case 1: ImGui::Text("%s", name.psz); break;
+								case 2: ImGui::Text("%d", feature._Value); break;
+								default: break;
 								}
 							}
-							ImGui::EndTable();
 						}
+						ImGui::EndTable();
 					}
-					else
-					{
-						ImGui::Text("No features found");
-					}
+				}
+				else
+				{
+					ImGui::Text("No features found");
 				}
 			}
 
 			if (ImGui::BulbToys_Menu("Test Format"))
 			{
-				char string[128] { 0 };
+				char string[128]{ 0 };
 
 				ImGui::InputText("##FTest", string, 128);
 				ImGui::TMUF_Text(string);

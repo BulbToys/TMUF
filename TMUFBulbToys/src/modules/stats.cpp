@@ -78,40 +78,36 @@ namespace stats
 
 				if (!stats)
 				{
-					auto trackmania = TMUF::BulbToys_GetTrackMania();
-					if (trackmania)
+					auto gps = Read<TMUF::CGamePlayerScore*>(TMUF::BulbToys_GetTrackMania() + 0x16C);
+					if (gps)
 					{
-						auto gps = Read<TMUF::CGamePlayerScore*>(trackmania + 0x16C);
-						if (gps)
+						count = gps->_Challenges.size;
+
+						if (count > 0)
 						{
-							count = gps->_Challenges.size;
+							stats = new Stat[count];
 
-							if (count > 0)
+							for (int i = 0; i < count; i++)
 							{
-								stats = new Stat[count];
+								auto score = gps->_Challenges.pElems[i];
 
-								for (int i = 0; i < count; i++)
+								WideStringToString(score->_TrackName.pwsz, score->_TrackName.size, stats[i].name_raw, 64);
+
+								stats[i].slices = ImGui::TMUF_Parse(stats[i].name_raw);
+								for (auto& slice : stats[i].slices)
 								{
-									auto score = gps->_Challenges.pElems[i];
-
-									WideStringToString(score->_TrackName.pwsz, score->_TrackName.size, stats[i].name_raw, 64);
-
-									stats[i].slices = ImGui::TMUF_Parse(stats[i].name_raw);
-									for (auto& slice : stats[i].slices)
-									{
-										stats[i].name_clean.append(slice.str);
-									}
-
-									TMUF::CMwId_GetName(&score->_AuthorNameID, &stats[i].author);
-									TMUF::CMwId_GetName(&score->_EnvironmentNameID, &stats[i].envi);
-
-									stats[i].total_time = score->_EditPlayTime + score->_RacePlayTime + score->_NetPlayTime;
-									stats[i].edit_time = score->_EditPlayTime;
-									stats[i].race_time = score->_RacePlayTime;
-									stats[i].net_time = score->_NetPlayTime;
-									stats[i].reset_count = score->_TotalResetCount;
-									stats[i].finish_count = score->_TotalFinishCount;
+									stats[i].name_clean.append(slice.str);
 								}
+
+								TMUF::CMwId_GetName(&score->_AuthorNameID, &stats[i].author);
+								TMUF::CMwId_GetName(&score->_EnvironmentNameID, &stats[i].envi);
+
+								stats[i].total_time = score->_EditPlayTime + score->_RacePlayTime + score->_NetPlayTime;
+								stats[i].edit_time = score->_EditPlayTime;
+								stats[i].race_time = score->_RacePlayTime;
+								stats[i].net_time = score->_NetPlayTime;
+								stats[i].reset_count = score->_TotalResetCount;
+								stats[i].finish_count = score->_TotalFinishCount;
 							}
 						}
 					}
@@ -123,8 +119,10 @@ namespace stats
 					{
 						// todo implement two-way sorting (asc and desc)
 						ImGui::TableNextRow();
+
 						ImGui::TableSetColumnIndex(0);
 						ImGui::Text("#");
+
 						ImGui::TableSetColumnIndex(1);
 						if (ImGui::Button("Track Name" "##StatsTable"))
 						{
@@ -136,6 +134,7 @@ namespace stats
 								return strcmp(stat_a->name_clean.c_str(), stat_b->name_clean.c_str());
 							});
 						}
+
 						ImGui::TableSetColumnIndex(2);
 						if (ImGui::Button("Author Name" "##StatsTable"))
 						{
@@ -147,6 +146,7 @@ namespace stats
 								return strcmp(stat_a->author.psz, stat_b->author.psz);
 							});
 						}
+
 						ImGui::TableSetColumnIndex(3);
 						if (ImGui::Button("Environment" "##StatsTable"))
 						{
@@ -158,6 +158,7 @@ namespace stats
 								return strcmp(stat_a->envi.psz, stat_b->envi.psz);
 							});
 						}
+
 						ImGui::TableSetColumnIndex(4);
 						if (ImGui::Button("Total Time" "##StatsTable"))
 						{
@@ -180,6 +181,7 @@ namespace stats
 								return 0;
 							});
 						}
+
 						ImGui::TableSetColumnIndex(5);
 						if (ImGui::Button("Edit Time" "##StatsTable"))
 						{
@@ -202,6 +204,7 @@ namespace stats
 								return 0;
 							});
 						}
+
 						ImGui::TableSetColumnIndex(6);
 						if (ImGui::Button("Race Time" "##StatsTable"))
 						{
@@ -224,6 +227,7 @@ namespace stats
 								return 0;
 							});
 						}
+
 						ImGui::TableSetColumnIndex(7);
 						if (ImGui::Button("Netplay Time" "##StatsTable"))
 						{
