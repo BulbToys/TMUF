@@ -15,7 +15,7 @@ namespace profile
 					ImGui::Text("Trail Color:");
 					uintptr_t trail_color_ptr = profile + 0x23C;
 					TMUF::GmVec3 trail_color = Read<TMUF::GmVec3>(trail_color_ptr);
-					if (ImGui::SliderFloat3("##TrailColor", reinterpret_cast<float*>(&trail_color), 0.0f, 1.0f))
+					if (ImGui::ColorEdit3("##TrailColor", &trail_color.x))
 					{
 						Write<TMUF::GmVec3>(trail_color_ptr, trail_color);
 					}
