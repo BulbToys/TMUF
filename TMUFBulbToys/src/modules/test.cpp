@@ -61,9 +61,9 @@ namespace test
 
 			if (ImGui::BulbToys_Menu("Test Format"))
 			{
-				char string[128]{ 0 };
+				char string[128] { 0 };
 
-				ImGui::InputText("##FTest", string, 128);
+				ImGui::InputText("##FTest", string, IM_ARRAYSIZE(string));
 				ImGui::TMUF_Text(string);
 			}
 

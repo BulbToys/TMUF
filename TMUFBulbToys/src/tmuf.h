@@ -47,6 +47,13 @@ namespace TMUF
 		}
 	};
 
+	struct SStringParamInt
+	{
+		const wchar_t* pwsz = nullptr;
+		int size = 0;
+		int _unk = 0;
+	};
+
 	struct CFastStringInt
 	{
 		int size;
@@ -60,6 +67,15 @@ namespace TMUF
 		~CFastStringInt()
 		{
 			reinterpret_cast<void(__thiscall*)(CFastStringInt*)>(0x4F1030)(this);
+		}
+
+		void SetString(int len, const wchar_t* str)
+		{
+			SStringParamInt param;
+			param.pwsz = str;
+			param.size = len;
+			
+			reinterpret_cast<void(__thiscall*)(CFastStringInt*, SStringParamInt*)>(0x903A90)(this, &param);
 		}
 	};
 
