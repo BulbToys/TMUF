@@ -97,6 +97,12 @@
       <EnableUAC>false</EnableUAC>
       <AdditionalDependencies>shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PreBuildEvent>
+      <Command>del "$(IntDir)gui.obj"</Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Message>Regenerating __TIME__ and __DATE__...</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -118,6 +124,12 @@
       <EnableUAC>false</EnableUAC>
       <AdditionalDependencies>shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PreBuildEvent>
+      <Command>del "$(IntDir)gui.obj"</Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Message>Regenerating __TIME__ and __DATE__...</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
