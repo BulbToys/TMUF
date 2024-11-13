@@ -189,10 +189,10 @@ bool PatchInfo::SanityCheck()
 	return true;
 }
 
-void PatchNOP(uintptr_t address, int count)
+void PatchCall(uintptr_t address, void* func)
 {
-	new PatchInfo(address, count);
-	memset(reinterpret_cast<void*>(address), 0x90, count);
+	ASSERT(Read<uint8_t>(address) == 0xE8);
+	Patch<uintptr_t>(address + 1, reinterpret_cast<uintptr_t>(func) - address - 5);
 }
 
 void PatchJMP(uintptr_t address, void* asm_func, size_t patch_len)
@@ -211,6 +211,12 @@ void PatchJMP(uintptr_t address, void* asm_func, size_t patch_len)
 
 	// Write nops until we've reached length
 	memset(reinterpret_cast<void*>(address + 5), 0x90, patch_len - 5);
+}
+
+void PatchNOP(uintptr_t address, int count)
+{
+	new PatchInfo(address, count);
+	memset(reinterpret_cast<void*>(address), 0x90, count);
 }
 
 void Unpatch(uintptr_t address, bool force_unpatch)

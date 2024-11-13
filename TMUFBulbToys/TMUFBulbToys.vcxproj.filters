@@ -99,6 +99,9 @@
     <ClCompile Include="src\modules\profile.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="core\bulbtoys\version.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="core\bulbtoys\gui.h">
@@ -192,6 +195,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="core\bulbtoys\git.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="core\bulbtoys\version.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

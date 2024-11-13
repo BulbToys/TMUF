@@ -195,11 +195,13 @@ inline void PatchArray(uintptr_t address, std::initializer_list<T> list)
 
 /* ===== Functions ===== */
 
-void PatchNOP(uintptr_t address, int count = 1);
+void PatchCall(uintptr_t address, void* func);
 
 // Recommended to ONLY use for __declspec(naked) inline __asm only functions
 // NOTE: The jump instruction is 5 bytes
 void PatchJMP(uintptr_t address, void* asm_func, size_t patch_len = 5);
+
+void PatchNOP(uintptr_t address, int count = 1);
 
 void Unpatch(uintptr_t address, bool force_unpatch = true);
 

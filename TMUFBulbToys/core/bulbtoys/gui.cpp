@@ -2,6 +2,7 @@
 #include "utils.h"
 #include "io.h"
 #include "hook.h"
+#include "version.h"
 
 #include "../imgui/imgui_impl_win32.h"
 #include "../imgui/imgui_impl_dx9.h"
@@ -68,10 +69,9 @@ void GUI::Overlay::Render()
 	if (ImGui::Begin("Overlay", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar |
 		ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoBackground))
 	{
-		// Splash logo
-		ImGui::Text("%d FPS | Powered by BulbToys %d - Built on " __DATE__ " " __TIME__, fps, GIT_REV_COUNT + 1);
+		ImGui::Text("%d FPS | Powered by BulbToys %d | Built on %s", fps, GIT_REV_COUNT + 1, BulbToys::GetBuildDateTime());
 
-		// Overlay panels
+		// Overlay module panels
 		auto iter = panels.begin();
 		while (iter != panels.end())
 		{
@@ -98,7 +98,7 @@ GUI::GUI(IDirect3DDevice9* device, HWND window)
 	
 	// Setup ImGui style
 	{
-		// Orange Enemymouse style from ImThemes
+		// Enemymouse style from ImThemes, orange-ified
 		ImGuiStyle& style = ImGui::GetStyle();
 
 		style.Alpha = 1.0f;
@@ -333,16 +333,20 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND, UINT, WPARAM,
 
 LRESULT CALLBACK GUI::WndProc(WNDPROC original_wndproc, HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	// Only process input if we have any windows open
-	if (IWindow::List().size() > 0 && ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam))
+	auto result = ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam);
+	if (result)
 	{
-		// TODO: broken in some games? only other replacement is hooking 10 different winapi functions though
-		// TODO: do we need to check what we're capturing (uMsg/wParam) alongside io.WantCaptureX?
-		auto& io = ImGui::GetIO();
-		if (io.WantCaptureKeyboard || io.WantCaptureMouse)
-		{
-			return 1L;
-		}
+		return result;
+	}
+
+	auto& io = ImGui::GetIO();
+	if (io.WantCaptureKeyboard && uMsg >= WM_KEYFIRST && uMsg <= WM_KEYLAST)
+	{
+		return 0;
+	}
+	if (io.WantCaptureMouse && uMsg >= WM_MOUSEFIRST && uMsg <= WM_MOUSELAST)
+	{
+		return 0;
 	}
 
 	return CallWindowProc(original_wndproc, hWnd, uMsg, wParam, lParam);
@@ -429,10 +433,12 @@ MainWindow::~MainWindow()
 
 bool MainWindow::Draw()
 {
-	/* ===== [ M A I N ] ===== */
 	if (ImGui::BulbToys_Menu("[Main]"))
 	{
-		// Detach & Confirm
+		ImGui::Text("Dear ImGui version: " IMGUI_VERSION);
+
+		ImGui::Separator();
+
 		if (ImGui::Button("Detach"))
 		{
 			if (this->confirm_close)
@@ -445,7 +451,6 @@ bool MainWindow::Draw()
 
 		ImGui::Separator();
 
-		// Address
 		ImGui::InputText("##MemEdit_InputAddr", this->input_addr, IM_ARRAYSIZE(this->input_addr), ImGuiInputTextFlags_CharsHexadecimal);
 
 		// !!! THIS TANKS PERFORMANCE - USE SPARINGLY !!!
@@ -456,10 +461,8 @@ bool MainWindow::Draw()
 		// TODO: Rewrite imgui_memory_editor.h to better support VirtualProtect, calling for the entire range of visible bytes when changed (scrolling/resizing)
 		//       This would lower VirtualProtect usage to anywhere from 0 to FPS*2 times per second (maybe even lower?)
 
-		// Use VirtualProtect for new window
 		ImGui::Checkbox("Use VirtualProtect for new window", &this->use_vprot);
 
-		// New Memory Editor & + 0000
 		if (ImGui::Button("New Memory Editor"))
 		{
 			uintptr_t addr;
@@ -478,7 +481,6 @@ bool MainWindow::Draw()
 			}
 		}
 
-		// New Playground
 		if (ImGui::Button("New Playground"))
 		{
 			new MemoryWindow(-1, 0x10000, false);
@@ -486,7 +488,6 @@ bool MainWindow::Draw()
 
 	}
 
-	/* ===== [ M O D U L E S ] ===== */
 	if (ImGui::BulbToys_Menu("[Modules]"))
 	{
 		if (!Module::First())
@@ -501,7 +502,6 @@ bool MainWindow::Draw()
 		}
 	}
 
-	/* ===== [ V K M A P ] ===== */
 	if (ImGui::BulbToys_Menu("[VKMap]"))
 	{
 		auto settings = Settings::Get();
@@ -523,7 +523,6 @@ bool MainWindow::Draw()
 		}
 	}
 
-	/* ===== [ W I N D O W S ] ===== */
 	if (ImGui::BulbToys_Menu("[Windows]"))
 	{
 		if (ImGui::Button("Close all"))
@@ -550,7 +549,7 @@ bool MainWindow::Draw()
 		}
 	}
 
-	/* ===== M O D U L E S ===== */
+	// Main window module panels
 	auto iter = panels.begin();
 	while (iter != panels.end())
 	{
