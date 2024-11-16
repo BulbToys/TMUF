@@ -1,5 +1,4 @@
 #pragma once
-#include <d3d9.h>
 
 #include "settings.h"
 
@@ -54,13 +53,25 @@ private:
 	HWND window = 0;
 	bool key_held[256] { false };
 
-	IO(HWND window);
+	LPVOID keyboard = nullptr;
+	LPVOID mouse = nullptr;
+
+	IO(HWND window, LPVOID keyboard, LPVOID mouse);
 	~IO();
 
 	WNDPROC original_wndproc = nullptr;
 	static LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+
+	using DiGetDeviceStateFn = long(__stdcall)(LPVOID, DWORD, LPVOID);
+	static DiGetDeviceStateFn IDIDevice8_GetDeviceState_;
+	static inline DiGetDeviceStateFn* IDIDevice8_GetDeviceState = nullptr;
+
+	using DiGetDeviceDataFn = long(__stdcall)(LPVOID, DWORD, LPVOID, LPDWORD, DWORD);
+	static DiGetDeviceDataFn IDIDevice8_GetDeviceData_;
+	static inline DiGetDeviceDataFn* IDIDevice8_GetDeviceData = nullptr;
+
 public:
-	static IO* Get(HWND window = 0);
+	static IO* Get(HWND window = 0, LPVOID keyboard = nullptr, LPVOID mouse = nullptr);
 	void End();
 
 	inline void Detach() { done = true; }

@@ -1,4 +1,5 @@
 #pragma once
+
 #include "hook.h"
 
 #include "../minhook/minhook.h"

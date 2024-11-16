@@ -90,7 +90,7 @@ void GUI::Overlay::Render()
 	}
 }
 
-GUI::GUI(IDirect3DDevice9* device, HWND window)
+GUI::GUI(LPVOID device, HWND window)
 {
 	this->device = device;
 
@@ -188,7 +188,7 @@ GUI::GUI(IDirect3DDevice9* device, HWND window)
 	}
 
 	ImGui_ImplWin32_Init(window);
-	ImGui_ImplDX9_Init(device);
+	ImGui_ImplDX9_Init((IDirect3DDevice9*)device);
 
 	GUI::PatchVTables(PatchMode::Patch);
 }
@@ -268,7 +268,7 @@ void GUI::PatchVTables(PatchMode pm)
 	}
 }
 
-HRESULT __stdcall GUI::ID3DDevice9_EndScene_(IDirect3DDevice9* device)
+HRESULT __stdcall GUI::ID3DDevice9_EndScene_(LPVOID device)
 {
 	auto result = GUI::ID3DDevice9_EndScene(device);
 
@@ -276,7 +276,12 @@ HRESULT __stdcall GUI::ID3DDevice9_EndScene_(IDirect3DDevice9* device)
 	if (!this_)
 	{
 		Error("GUI::ID3DDevice9_EndScene_ called but no GUI instance.");
-		return result;// DIE();
+		return result;
+	}
+
+	if (device != this_->device)
+	{
+		return result;
 	}
 
 	ImGui_ImplDX9_NewFrame();
@@ -304,15 +309,27 @@ HRESULT __stdcall GUI::ID3DDevice9_EndScene_(IDirect3DDevice9* device)
 	return result;
 }
 
-HRESULT __stdcall GUI::ID3DDevice9_Reset_(IDirect3DDevice9* device, D3DPRESENT_PARAMETERS* params)
+HRESULT __stdcall GUI::ID3DDevice9_Reset_(LPVOID device, LPVOID params)
 {
+	auto this_ = GUI::instance;
+	if (!this_)
+	{
+		Error("GUI::ID3DDevice9_Reset_ called but no GUI instance.");
+		return GUI::ID3DDevice9_Reset(device, params);
+	}
+
+	if (device != this_->device)
+	{
+		return GUI::ID3DDevice9_Reset(device, params);
+	}
+
 	ImGui_ImplDX9_InvalidateDeviceObjects();
 	const auto result = GUI::ID3DDevice9_Reset(device, params);
 	ImGui_ImplDX9_CreateDeviceObjects();
 	return result;
 }
 
-HRESULT __stdcall GUI::ID3DDevice9_BeginStateBlock_(IDirect3DDevice9* device)
+HRESULT __stdcall GUI::ID3DDevice9_BeginStateBlock_(LPVOID device)
 {
 	auto result = GUI::ID3DDevice9_BeginStateBlock(device);
 
@@ -320,7 +337,12 @@ HRESULT __stdcall GUI::ID3DDevice9_BeginStateBlock_(IDirect3DDevice9* device)
 	if (!this_)
 	{
 		Error("GUI::ID3DDevice9_BeginStateBlock_ called but no GUI instance.");
-		return result;// DIE();
+		return result;
+	}
+
+	if (device != this_->device)
+	{
+		return result;
 	}
 
 	// ID3DDevice9::BeginStateBlock resets the vtable ?????????? (thanks ficool2 :3)
@@ -352,7 +374,7 @@ LRESULT CALLBACK GUI::WndProc(WNDPROC original_wndproc, HWND hWnd, UINT uMsg, WP
 	return CallWindowProc(original_wndproc, hWnd, uMsg, wParam, lParam);
 }
 
-GUI* GUI::Get(IDirect3DDevice9* device, HWND window)
+GUI* GUI::Get(LPVOID device, HWND window)
 {
 	if (!GUI::instance && device && window)
 	{

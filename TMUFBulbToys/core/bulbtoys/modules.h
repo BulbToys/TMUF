@@ -1,4 +1,5 @@
 #pragma once
+
 #include "module.h"
 
 // Modules are End()ed in reverse of the order they're Init()ed in to ensure proper cleanup. For example:

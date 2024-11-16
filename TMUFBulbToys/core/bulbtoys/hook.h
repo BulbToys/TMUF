@@ -1,4 +1,5 @@
 #pragma once
+
 #include <cstdint>
 
 // Hook function and call

@@ -12,17 +12,25 @@ BOOL APIENTRY DllMain(HMODULE instance, DWORD reason, LPVOID)
 		{
 			BulbToys::SetupParams params;
 			params.instance = instance;
-			params.GetDevice = +[]() 
+			params.GetD3D9Device = +[]() 
 			{
-				IDirect3DDevice9* device = nullptr;
+				LPVOID device = nullptr;
 
 				auto vision_viewport = TMUF::BulbToys_GetVisionViewportDX9();
 				if (vision_viewport)
 				{
-					device = Read<IDirect3DDevice9*>(vision_viewport + 0x9F8);
+					device = Read<LPVOID>(vision_viewport + 0x9F8);
 				}
 
 				return device;
+			};
+			params.GetDI8KeyboardDevice = +[]()
+			{
+				return TMUF::BulbToys_GetDI8Device(1);
+			};
+			params.GetDI8MouseDevice = +[]()
+			{
+				return TMUF::BulbToys_GetDI8Device(0);
 			};
 			params.settings_file = "TMUF_BulbToys.ini";
 			BulbToys::Setup(params);

@@ -1,10 +1,11 @@
 #pragma once
+
+#include <format>
+
 #include "utils.h"
 
 #define MINI_CASE_SENSITIVE
 #include "../mini/ini.h"
-
-#include <format>
 
 #define INVALID_KEY "(invalid)"
 

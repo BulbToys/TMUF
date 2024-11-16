@@ -298,3 +298,40 @@ void ImGui::TMUF_InputFastString(TMUF::CFastString& fast_string, const char* lab
 		fast_string.SetString(strlen(buf), buf);
 	}
 }
+
+uintptr_t TMUF::BulbToys_GetEngine(_Engine e)
+{
+	uintptr_t mw_engine_main = Read<uintptr_t>(0xD74960);
+	if (!mw_engine_main)
+	{
+		return 0;
+	}
+
+	int index = (int)e;
+	auto engines = reinterpret_cast<TMUF::CFastBuffer<uintptr_t>*>(mw_engine_main + 0x20);
+	if (index >= engines->size)
+	{
+		return 0;
+	}
+
+	return engines->pElems[index];
+}
+
+LPVOID TMUF::BulbToys_GetDI8Device(int index)
+{
+	LPVOID device = nullptr;
+
+	auto input_port = Read<uintptr_t>(0xD72DE8);
+	if (input_port)
+	{
+		auto input_port_vtbl = Read<uintptr_t>(input_port);
+		if (input_port_vtbl == 0xBBEE64)
+		{
+			auto input_device_array = reinterpret_cast<TMUF::CFastArray<uintptr_t>*>(input_port + 0x2C);
+
+			device = Read<LPVOID>(input_device_array->pElems[index] + 0x3C);
+		}
+	} 
+
+	return device;
+}

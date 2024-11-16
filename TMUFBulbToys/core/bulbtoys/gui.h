@@ -1,5 +1,4 @@
 #pragma once
-#include <d3d9.h>
 
 #include "my_imgui.h"
 #include "io.h"
@@ -12,7 +11,7 @@ class GUI
 	static inline GUI* instance = nullptr;
 
 	WNDPROC original_wndproc = nullptr;
-	IDirect3DDevice9* device = nullptr;
+	LPVOID device = nullptr;
 
 	static void CreateMainWindow();
 	IO::Hotkey<"CreateMainWindow", VK_F9> create_main_window { GUI::CreateMainWindow };
@@ -31,7 +30,7 @@ class GUI
 	};
 	Overlay overlay;
 
-	GUI(IDirect3DDevice9* device, HWND window);
+	GUI(LPVOID device, HWND window);
 	~GUI();
 
 	void Render();
@@ -44,22 +43,22 @@ class GUI
 	};
 	void PatchVTables(PatchMode pm);
 
-	using DxEndSceneFn = long(__stdcall)(IDirect3DDevice9*);
+	using DxEndSceneFn = long(__stdcall)(LPVOID);
 	static DxEndSceneFn ID3DDevice9_EndScene_;
 	static inline DxEndSceneFn* ID3DDevice9_EndScene = nullptr;
 
-	using DxResetFn = long(__stdcall)(IDirect3DDevice9*, D3DPRESENT_PARAMETERS*);
+	using DxResetFn = long(__stdcall)(LPVOID, LPVOID);
 	static DxResetFn ID3DDevice9_Reset_;
 	static inline DxResetFn* ID3DDevice9_Reset = nullptr;
 
-	using DxBeginStateBlockFn = long(__stdcall)(IDirect3DDevice9*);
+	using DxBeginStateBlockFn = long(__stdcall)(LPVOID);
 	static DxBeginStateBlockFn ID3DDevice9_BeginStateBlock_;
 	static inline DxBeginStateBlockFn* ID3DDevice9_BeginStateBlock = nullptr;
 
 	static LRESULT CALLBACK WndProc(WNDPROC original_wndproc, HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	friend class IO; // Sadly necessary so the IO can call our WndProc (friend function will not work)
 public:
-	static GUI* Get(IDirect3DDevice9* device = nullptr, HWND window = 0);
+	static GUI* Get(LPVOID device = nullptr, HWND window = 0);
 	void End();
 };
 

@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <string>
+#include <dinput.h>
 
 #include "../core/bulbtoys/utils.h"
 #include "../core/imgui/imgui.h"
@@ -14,6 +15,54 @@ namespace TMUF
 
 	/* ===== E N U M S ===== */
 
+	enum _Engine
+	{
+		MwFoundations = 0x1,
+		Data = 0x2,
+		Game = 0x3,
+		Graphic = 0x4,
+		Function = 0x5,
+		Hms = 0x6,
+		Control = 0x7,
+		Motion = 0x8,
+		Plug = 0x9,
+		Scene = 0xA,
+		System = 0xB,
+		Vision = 0xC,
+		Psy = 0xD,
+		Edit = 0xE,
+		NodEdit = 0xD,
+		Audio = 0x10,
+		Script = 0x11,
+		Net = 0x12,
+		Input = 0x13,
+		Xml = 0x14,
+		Movie = 0x15,
+		Ptp = 0x16,
+		CyberDrive = 0x20,
+		VirtualSkipper = 0x21,
+		Adventure = 0x22,
+		Lanfeust = 0x23,
+		TrackMania = 0x24,
+		Sorcieres = 0x25,
+		Mg = 0x26,
+		GbxViewer = 0x27,
+		Gbe = 0x28,
+		MediaTrackerApp = 0x29,
+		RenderBox = 0x2A,
+		Fbx = 0x2B,
+		QuestMania = 0x2C,
+		ShootMania = 0x2D,
+		ClassicSb = 0x70,
+		Anim = 0x71,
+		SCEngine = 0x72,
+		GLManager = 0x73,
+		TLEngine = 0x74,
+		UIEngine = 0x75,
+		Undo = 0x76,
+		PropertyEditor = 0x77,
+		Storyboarder = 0x78,
+	};
 
 
 	/* ===== S T R U C T S ===== */
@@ -24,6 +73,13 @@ namespace TMUF
 		int size = 0;
 		T* pElems = nullptr;
 		int capacity = 0;
+	};
+
+	template <typename T>
+	struct CFastArray
+	{
+		int size = 0;
+		T* pElems = nullptr;
 	};
 
 	struct CFastString
@@ -212,7 +268,10 @@ namespace TMUF
 
 	/* ===== H E L P E R   F U N C S ===== */
 
+	uintptr_t BulbToys_GetEngine(_Engine e);
 
+	// 0 = Mouse, 1 = Keyboard, 2+ = Joystick
+	LPVOID BulbToys_GetDI8Device(int index);
 
 	/* ===== C O N S T E X P R   F U N C S ===== */
 

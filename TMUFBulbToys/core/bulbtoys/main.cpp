@@ -1,5 +1,4 @@
 #include <Windows.h>
-#include <d3d9.h>
 
 #include "main.h"
 #include "io.h"
@@ -25,7 +24,7 @@ DWORD WINAPI BulbToys_Main(LPVOID lpThreadParameter)
 	{
 		while (!io->Done())
 		{
-			Sleep(200);
+			Sleep(BULBTOYS_SLEEP);
 		}
 	}
 
@@ -69,9 +68,11 @@ bool BulbToys::Init(BulbToys::SetupParams& params, bool thread)
 	// Settings
 	Settings::Get(params.settings_file);
 
-	IDirect3DDevice9* device = nullptr;
+	LPVOID d3d9_device = nullptr;
+	LPVOID keyboard_device = nullptr;
+	LPVOID mouse_device = nullptr;
 
-	if (!params.GetDevice)
+	if (!params.GetD3D9Device)
 	{
 		// Modules (No UI)
 		Modules::Init();
@@ -82,14 +83,30 @@ bool BulbToys::Init(BulbToys::SetupParams& params, bool thread)
 
 	if (thread)
 	{
-		while (!(device = params.GetDevice()))
+		while (!(d3d9_device = params.GetD3D9Device()))
 		{
-			Sleep(200);
+			Sleep(BULBTOYS_SLEEP);
+		}
+
+		if (params.GetDI8KeyboardDevice)
+		{
+			while (!(keyboard_device = params.GetDI8KeyboardDevice()))
+			{
+				Sleep(BULBTOYS_SLEEP);
+			}
+		}
+
+		if (params.GetDI8MouseDevice)
+		{
+			while (!(mouse_device = params.GetDI8MouseDevice()))
+			{
+				Sleep(BULBTOYS_SLEEP);
+			}
 		}
 	}
 	else
 	{
-		if (!(device = params.GetDevice()))
+		if (!(d3d9_device = params.GetD3D9Device()))
 		{
 			// Modules (No UI)
 			Modules::Init();
@@ -97,19 +114,33 @@ bool BulbToys::Init(BulbToys::SetupParams& params, bool thread)
 			// Partial success - no IO or GUI
 			return true;
 		}
+
+		if (params.GetDI8KeyboardDevice)
+		{
+			keyboard_device = params.GetDI8KeyboardDevice();
+		}
+
+		if (params.GetDI8MouseDevice)
+		{
+			mouse_device = params.GetDI8MouseDevice();
+		}
 	}
 
 	// IO
-	D3DDEVICE_CREATION_PARAMETERS d3d_params;
-	device->GetCreationParameters(&d3d_params);
-	auto window = d3d_params.hFocusWindow;
-	IO::Get(window);
+	uint8_t d3d_params[16];
+
+	using DxGetCreationParametersFn = long(__stdcall)(LPVOID, LPVOID);
+	auto ID3DDevice9_GetCreationParameters = reinterpret_cast<DxGetCreationParametersFn*>(Virtual<9>(reinterpret_cast<uintptr_t>(d3d9_device)));
+	ID3DDevice9_GetCreationParameters(d3d9_device, &d3d_params);
+
+	auto window = Read<HWND>(reinterpret_cast<uintptr_t>(&d3d_params) + 0x8);
+	IO::Get(window, keyboard_device, mouse_device);
 
 	// GUI
 	Settings::Bool<"BulbToys", "UseGUI", true> use_gui;
 	if (use_gui.Get())
 	{
-		GUI::Get(device, window);
+		GUI::Get(d3d9_device, window);
 	}
 
 	// Modules
