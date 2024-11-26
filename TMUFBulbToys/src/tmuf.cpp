@@ -335,3 +335,41 @@ LPVOID TMUF::BulbToys_GetDI8Device(int index)
 
 	return device;
 }
+
+uintptr_t TMUF::BulbToys_GetControlFromFrame(const char* frame, const char* control)
+{
+	auto trackmania = TMUF::BulbToys_GetTrackMania();
+	if (!trackmania)
+	{
+		return 0;
+	}
+
+	auto menu = Read<uintptr_t>(trackmania + 0x194);
+	if (!menu)
+	{
+		return 0;
+	}
+
+	auto game_menu = Read<uintptr_t>(menu + 0x788);
+	if (!game_menu)
+	{
+		return 0;
+	}
+	auto frames = reinterpret_cast<TMUF::CFastBuffer<uintptr_t>*>(game_menu + 0x68);
+
+	CMwId frame_mwid;
+	TMUF::CMwId_CreateFromLocalName(&frame_mwid, frame);
+
+	// CControlContainer* ccc = CFastBuffer<4>::GetNodFromId(frames, &frame_mwid);
+	uintptr_t container = reinterpret_cast<uintptr_t(__thiscall*)(TMUF::CFastBuffer<uintptr_t>*, CMwId*)>(0x57AF90)(frames, &frame_mwid);
+	if (!container)
+	{
+		return 0;
+	}
+
+	CMwId control_mwid;
+	TMUF::CMwId_CreateFromLocalName(&control_mwid, control);
+
+	// CControlContainer::GetChildFromId(ccc, control_mwid, 1);
+	return reinterpret_cast<uintptr_t(__thiscall*)(uintptr_t, CMwId*, int)>(0x767620)(container, &control_mwid, 1);
+}

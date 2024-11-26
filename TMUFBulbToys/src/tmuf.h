@@ -260,6 +260,7 @@ namespace TMUF
 	/* ===== F U N C T I O N S ===== */
 
 	FUNC(0x935660, CFastString*, __thiscall, CMwId_GetName, CMwId* mw_id, CFastString* string);
+	FUNC(0x42BD90, CMwId*, , CMwId_CreateFromLocalName, CMwId* mw_id, const char* local_name);
 
 	FUNC(0x5F8420, uintptr_t, __thiscall, CGameCtnApp_GetCurrentInputBindings, uintptr_t game_ctn_app, int zero);
 
@@ -272,6 +273,8 @@ namespace TMUF
 
 	// 0 = Mouse, 1 = Keyboard, 2+ = Joystick
 	LPVOID BulbToys_GetDI8Device(int index);
+
+	uintptr_t BulbToys_GetControlFromFrame(const char* frame, const char* control);
 
 	/* ===== C O N S T E X P R   F U N C S ===== */
 

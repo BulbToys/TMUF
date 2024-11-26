@@ -30,43 +30,11 @@ namespace profile
 
 				ImGui::Separator();
 
-				// TODO 1: all of this for nickname changing is horrible, nuke me as soon as you figure out where the control gets its max length
-				// TODO 2: also, implement CopyToClipboardUnicode please for the love of god for the old nickname or osmething
-				uintptr_t menu = Read<uintptr_t>(trackmania + 0x194);
-				if (menu)
+				static int nick_max_len = 45;
+				if (ImGui::BulbToys_SliderInt("EntryNickname MaxLength (default: 45)", "##NickMaxLen", &nick_max_len, 0, 75))
 				{
-					constexpr size_t NICK_MAX = 76;
-
-					auto old_nick = reinterpret_cast<TMUF::CFastStringInt*>(menu + 0x3B8);
-					auto new_nick = reinterpret_cast<TMUF::CFastStringInt*>(menu + 0x3B0);
-
-					char im_old_nick[NICK_MAX]{ 0 };
-					WideStringToString(old_nick->pwsz, NICK_MAX, im_old_nick, NICK_MAX);
-					auto im_old_len = strlen(im_old_nick);
-
-					char im_new_nick[NICK_MAX] { 0 };
-					WideStringToString(new_nick->pwsz, NICK_MAX, im_new_nick, NICK_MAX);
-					auto im_new_len = strlen(im_new_nick);
-
-					ImGui::Text("Old Nickname [%2d/75]:", im_old_len);
-					if (im_old_len)
-					{
-						ImGui::SameLine();
-					}
-					ImGui::TMUF_Text(im_old_nick);
-
-					ImGui::Text("New Nickname [%2d/75]:", im_new_len);
-					if (im_new_len)
-					{
-						ImGui::SameLine();
-					}
-					ImGui::TMUF_Text(im_new_nick);
-					if (ImGui::InputText("##NickName", im_new_nick, IM_ARRAYSIZE(im_new_nick)))
-					{
-						wchar_t im_new_nick_w[NICK_MAX];
-						StringToWideString(im_new_nick, NICK_MAX, im_new_nick_w, NICK_MAX);
-						new_nick->SetString(lstrlenW(im_new_nick_w), im_new_nick_w);
-					}
+					uintptr_t entry_nick = TMUF::BulbToys_GetControlFromFrame("FrameProfile2", "EntryNickName");
+					Write<int>(entry_nick + 0x150, nick_max_len);
 				}
 			}
 
@@ -83,18 +51,6 @@ namespace profile
 
 		return nullptr;
 	}
-
-	void Init()
-	{
-		Unprotect _(0x643682, 2);
-		Patch<uint16_t>(0x643682, 0xC033);
-	}
-
-	void End()
-	{
-		Unprotect _(0x643682, 2);
-		Unpatch(0x643682);
-	}
 }
 
-MODULE(profile);
+MODULE_PANEL_ONLY(profile);
