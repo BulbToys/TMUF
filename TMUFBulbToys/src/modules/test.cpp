@@ -5,6 +5,9 @@ namespace test
 {
 	struct TestPanel : IPanel
 	{
+		bool deref = false;
+		char classname_addy[9] { 0 };
+
 		virtual bool Draw() override final
 		{
 			auto trackmania = TMUF::BulbToys_GetTrackMania();
@@ -65,6 +68,34 @@ namespace test
 
 				ImGui::InputText("##FTest", string, IM_ARRAYSIZE(string));
 				ImGui::TMUF_Text(string);
+			}
+
+			if (ImGui::BulbToys_Menu("Test GetClassName"))
+			{
+				ImGui::Checkbox("Dereference", &(this->deref));
+				ImGui::InputText("##GetClassName_InputAddr", this->classname_addy, IM_ARRAYSIZE(this->classname_addy), ImGuiInputTextFlags_CharsHexadecimal);
+				
+				uintptr_t addr;
+				if (sscanf_s(this->classname_addy, "%IX", &addr) == 1)
+				{
+					if (!deref)
+					{
+						// do not dereference, this is a pointer to a vtable
+						ImGui::Text("Class: %s", TMUF::BulbToys_GetClassName(addr));
+					}
+					else
+					{
+						// do dereference, this is a class pointer which has a vtable
+						Unprotect _(addr, 4);
+						auto vtbl = Read<uintptr_t>(addr);
+						ImGui::BulbToys_AddyLabel(vtbl, "VTable");
+						ImGui::Text("Class: %s", TMUF::BulbToys_GetClassName(vtbl));
+					}
+				}
+				else
+				{
+					ImGui::Text("Address is not valid!");
+				}
 			}
 
 			if (ImGui::BulbToys_Menu("Test Time"))

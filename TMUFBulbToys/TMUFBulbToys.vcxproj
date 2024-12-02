@@ -190,6 +190,7 @@
     <ClCompile Include="core\minhook\hook.c" />
     <ClCompile Include="core\minhook\trampoline.c" />
     <ClCompile Include="src\dllmain.cpp" />
+    <ClCompile Include="src\modules\analyser.cpp" />
     <ClCompile Include="src\modules\ghosts.cpp" />
     <ClCompile Include="src\modules\profile.cpp" />
     <ClCompile Include="src\modules\server.cpp" />
@@ -231,6 +232,7 @@
     <ClInclude Include="core\minhook\trampoline.h" />
     <ClInclude Include="core\mini\ini.h" />
     <ClInclude Include="src\tmuf.h" />
+    <ClInclude Include="src\tmuf_mwcid.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

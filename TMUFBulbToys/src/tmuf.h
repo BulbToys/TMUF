@@ -7,6 +7,8 @@
 #include "../core/bulbtoys/utils.h"
 #include "../core/imgui/imgui.h"
 
+#include "tmuf_mwcid.h"
+
 namespace TMUF
 {
 	/* ===== N A M E S P A C E S ===== */
@@ -269,12 +271,16 @@ namespace TMUF
 
 	/* ===== H E L P E R   F U N C S ===== */
 
-	uintptr_t BulbToys_GetEngine(_Engine e);
-
 	// 0 = Mouse, 1 = Keyboard, 2+ = Joystick
 	LPVOID BulbToys_GetDI8Device(int index);
 
+	uintptr_t BulbToys_GetEngine(_Engine e);
+
+	const char* BulbToys_GetClassName(uintptr_t vtable);
+
 	uintptr_t BulbToys_GetControlFromFrame(const char* frame, const char* control);
+
+	bool BulbToys_MwIsKindOf(uintptr_t mw, _MwClassId cid);
 
 	/* ===== C O N S T E X P R   F U N C S ===== */
 

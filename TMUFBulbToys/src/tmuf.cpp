@@ -4,6 +4,113 @@
 
 #include <string>
 
+uintptr_t TMUF::BulbToys_GetEngine(_Engine e)
+{
+	uintptr_t mw_engine_main = Read<uintptr_t>(0xD74960);
+	if (!mw_engine_main)
+	{
+		return 0;
+	}
+
+	int index = (int)e;
+	auto engines = reinterpret_cast<TMUF::CFastBuffer<uintptr_t>*>(mw_engine_main + 0x20);
+	if (index >= engines->size)
+	{
+		return 0;
+	}
+
+	return engines->pElems[index];
+}
+
+const char* TMUF::BulbToys_GetClassName(uintptr_t vtable)
+{
+	static mINI::INIStructure ini;
+	static bool loaded = false;
+	if (!loaded)
+	{
+		// vtables.ini must be next to TMUF_BulbToys.ini (ie. next to TmForever.exe)
+		mINI::INIFile file("vtables.ini");
+		file.read(ini);
+
+		loaded = true;
+	}
+
+	char address[9];
+	MYPRINTF(address, 9, "%08X", vtable);
+
+	const char* name = ini["VTables"][address].c_str();
+	if (strlen(name) == 0)
+	{
+		return "(unknown class)";
+	}
+
+	return name;
+}
+
+LPVOID TMUF::BulbToys_GetDI8Device(int index)
+{
+	LPVOID device = nullptr;
+
+	auto input_port = Read<uintptr_t>(0xD72DE8);
+	if (input_port)
+	{
+		auto input_port_vtbl = Read<uintptr_t>(input_port);
+		if (input_port_vtbl == 0xBBEE64)
+		{
+			auto input_device_array = reinterpret_cast<TMUF::CFastArray<uintptr_t>*>(input_port + 0x2C);
+
+			device = Read<LPVOID>(input_device_array->pElems[index] + 0x3C);
+		}
+	}
+
+	return device;
+}
+
+uintptr_t TMUF::BulbToys_GetControlFromFrame(const char* frame, const char* control)
+{
+	auto trackmania = TMUF::BulbToys_GetTrackMania();
+	if (!trackmania)
+	{
+		return 0;
+	}
+
+	auto menu = Read<uintptr_t>(trackmania + 0x194);
+	if (!menu)
+	{
+		return 0;
+	}
+
+	auto game_menu = Read<uintptr_t>(menu + 0x788);
+	if (!game_menu)
+	{
+		return 0;
+	}
+	auto frames = reinterpret_cast<TMUF::CFastBuffer<uintptr_t>*>(game_menu + 0x68);
+
+	CMwId frame_mwid;
+	TMUF::CMwId_CreateFromLocalName(&frame_mwid, frame);
+
+	// CControlContainer* ccc = CFastBuffer<4>::GetNodFromId(frames, &frame_mwid);
+	uintptr_t container = reinterpret_cast<uintptr_t(__thiscall*)(TMUF::CFastBuffer<uintptr_t>*, CMwId*)>(0x57AF90)(frames, &frame_mwid);
+	if (!container)
+	{
+		return 0;
+	}
+
+	CMwId control_mwid;
+	TMUF::CMwId_CreateFromLocalName(&control_mwid, control);
+
+	// CControlContainer::GetChildFromId(ccc, control_mwid, 1);
+	return reinterpret_cast<uintptr_t(__thiscall*)(uintptr_t, CMwId*, int)>(0x767620)(container, &control_mwid, 1);
+}
+
+bool TMUF::BulbToys_MwIsKindOf(uintptr_t mw, TMUF::_MwClassId cid)
+{
+	using MwIsKindOfFn = bool(__thiscall*)(uintptr_t, TMUF::_MwClassId);
+	auto MwIsKindOf = reinterpret_cast<MwIsKindOfFn>(Virtual<4>(mw));
+	return MwIsKindOf(mw, cid);
+}
+
 std::vector<ImGui::TMUF_TextSlice> ImGui::TMUF_Parse(const char* text)
 {
 	std::stringstream stream(text);
@@ -297,79 +404,4 @@ void ImGui::TMUF_InputFastString(TMUF::CFastString& fast_string, const char* lab
 	{
 		fast_string.SetString(strlen(buf), buf);
 	}
-}
-
-uintptr_t TMUF::BulbToys_GetEngine(_Engine e)
-{
-	uintptr_t mw_engine_main = Read<uintptr_t>(0xD74960);
-	if (!mw_engine_main)
-	{
-		return 0;
-	}
-
-	int index = (int)e;
-	auto engines = reinterpret_cast<TMUF::CFastBuffer<uintptr_t>*>(mw_engine_main + 0x20);
-	if (index >= engines->size)
-	{
-		return 0;
-	}
-
-	return engines->pElems[index];
-}
-
-LPVOID TMUF::BulbToys_GetDI8Device(int index)
-{
-	LPVOID device = nullptr;
-
-	auto input_port = Read<uintptr_t>(0xD72DE8);
-	if (input_port)
-	{
-		auto input_port_vtbl = Read<uintptr_t>(input_port);
-		if (input_port_vtbl == 0xBBEE64)
-		{
-			auto input_device_array = reinterpret_cast<TMUF::CFastArray<uintptr_t>*>(input_port + 0x2C);
-
-			device = Read<LPVOID>(input_device_array->pElems[index] + 0x3C);
-		}
-	} 
-
-	return device;
-}
-
-uintptr_t TMUF::BulbToys_GetControlFromFrame(const char* frame, const char* control)
-{
-	auto trackmania = TMUF::BulbToys_GetTrackMania();
-	if (!trackmania)
-	{
-		return 0;
-	}
-
-	auto menu = Read<uintptr_t>(trackmania + 0x194);
-	if (!menu)
-	{
-		return 0;
-	}
-
-	auto game_menu = Read<uintptr_t>(menu + 0x788);
-	if (!game_menu)
-	{
-		return 0;
-	}
-	auto frames = reinterpret_cast<TMUF::CFastBuffer<uintptr_t>*>(game_menu + 0x68);
-
-	CMwId frame_mwid;
-	TMUF::CMwId_CreateFromLocalName(&frame_mwid, frame);
-
-	// CControlContainer* ccc = CFastBuffer<4>::GetNodFromId(frames, &frame_mwid);
-	uintptr_t container = reinterpret_cast<uintptr_t(__thiscall*)(TMUF::CFastBuffer<uintptr_t>*, CMwId*)>(0x57AF90)(frames, &frame_mwid);
-	if (!container)
-	{
-		return 0;
-	}
-
-	CMwId control_mwid;
-	TMUF::CMwId_CreateFromLocalName(&control_mwid, control);
-
-	// CControlContainer::GetChildFromId(ccc, control_mwid, 1);
-	return reinterpret_cast<uintptr_t(__thiscall*)(uintptr_t, CMwId*, int)>(0x767620)(container, &control_mwid, 1);
 }
