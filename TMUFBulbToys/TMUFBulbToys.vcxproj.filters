@@ -87,9 +87,6 @@
     <ClCompile Include="src\modules\test.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\modules\unbind.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\modules\ghosts.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

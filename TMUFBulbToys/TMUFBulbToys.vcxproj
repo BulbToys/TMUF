@@ -196,7 +196,6 @@
     <ClCompile Include="src\modules\server.cpp" />
     <ClCompile Include="src\modules\test.cpp" />
     <ClCompile Include="src\modules\stats.cpp" />
-    <ClCompile Include="src\modules\unbind.cpp" />
     <ClCompile Include="src\tmuf.cpp" />
   </ItemGroup>
   <ItemGroup>

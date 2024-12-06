@@ -7,10 +7,12 @@ namespace server
 	{
 		virtual bool Draw() override final
 		{
+			/*
 			if (ImGui::BulbToys_Menu("Server"))
 			{
-				ImGui::Text("todo :3");
+				
 			}
+			*/
 
 			if (ImGui::BulbToys_Menu("Server [SECRET]"))
 			{

@@ -36,6 +36,20 @@ namespace profile
 					uintptr_t entry_nick = TMUF::BulbToys_GetControlFromFrame("FrameProfile2", "EntryNickName");
 					Write<int>(entry_nick + 0x150, nick_max_len);
 				}
+
+				static bool unlimited_painter_text = false;
+				if (ImGui::Checkbox("Unlimited painter text", &unlimited_painter_text))
+				{
+					uintptr_t entry_txtbmp = TMUF::BulbToys_GetControlFromFrame("FramePaintVehicle", "EntryTextToBitmap");
+					if (unlimited_painter_text)
+					{
+						Write<int>(entry_txtbmp + 0x150, -1);
+					}
+					else
+					{
+						Write<int>(entry_txtbmp + 0x150, 10);
+					}
+				}
 			}
 
 			return true;
