@@ -50,7 +50,12 @@ bool Hooks::Create(uintptr_t address, void* hook, void* call = nullptr)
 
 bool Hooks::Destroy(void* address)
 {
-	Unpatch(reinterpret_cast<uintptr_t>(address));
+	auto patch = PatchInfo::Find(reinterpret_cast<uintptr_t>(address));
+	if (!patch)
+	{
+		Error("Failed to disable hook 0x%p: Couldn't find its PatchInfo.", address);
+	}
+	delete patch;
 
 	auto status = MH_DisableHook(address);
 	if (status != MH_OK)
