@@ -127,7 +127,7 @@ bool BulbToys::Init(BulbToys::SetupParams& params, bool thread)
 	}
 
 	// IO
-	uint8_t d3d_params[16];
+	uint8_t d3d_params[16] {0};
 
 	using DxGetCreationParametersFn = long(__stdcall)(LPVOID, LPVOID);
 	auto ID3DDevice9_GetCreationParameters = reinterpret_cast<DxGetCreationParametersFn*>(Virtual<9>(reinterpret_cast<uintptr_t>(d3d9_device)));

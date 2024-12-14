@@ -4,6 +4,8 @@
 
 IO::IO(HWND window, LPVOID keyboard, LPVOID mouse)
 {
+	IO::instance = this;
+
 	this->window = window;
 	this->keyboard = keyboard;
 	this->mouse = mouse;
@@ -11,20 +13,32 @@ IO::IO(HWND window, LPVOID keyboard, LPVOID mouse)
 
 	if (mouse)
 	{
-		CREATE_VTABLE_PATCH(PtrVirtual<9>(reinterpret_cast<uintptr_t>(this->mouse)), IDIDevice8_GetDeviceState);
+		auto Mouse_GetDeviceState = PtrVirtual<9>(reinterpret_cast<uintptr_t>(this->mouse));
+		Unprotect _(Mouse_GetDeviceState, 4);
+
+		CREATE_VTABLE_PATCH(Mouse_GetDeviceState, IDIDevice8_GetDeviceState);
 		if (!keyboard)
 		{
+			auto Mouse_GetDeviceData = PtrVirtual<10>(reinterpret_cast<uintptr_t>(this->mouse));
+			Unprotect _(Mouse_GetDeviceData, 4);
+
 			// No need to patch twice if we're using a KB&M, they'll always use the same vtable
-			CREATE_VTABLE_PATCH(PtrVirtual<10>(reinterpret_cast<uintptr_t>(this->mouse)), IDIDevice8_GetDeviceData);
+			CREATE_VTABLE_PATCH(Mouse_GetDeviceData, IDIDevice8_GetDeviceData);
 		}
 	}
 	if (keyboard)
 	{
-		CREATE_VTABLE_PATCH(PtrVirtual<10>(reinterpret_cast<uintptr_t>(this->keyboard)), IDIDevice8_GetDeviceData);
+		auto Keyboard_GetDeviceData = PtrVirtual<10>(reinterpret_cast<uintptr_t>(this->keyboard));
+		Unprotect _(Keyboard_GetDeviceData, 4);
+
+		CREATE_VTABLE_PATCH(Keyboard_GetDeviceData, IDIDevice8_GetDeviceData);
 		if (!mouse)
 		{
+			auto Keyboard_GetDeviceState = PtrVirtual<9>(reinterpret_cast<uintptr_t>(this->keyboard));
+			Unprotect _(Keyboard_GetDeviceState, 4);
+
 			// No need to patch twice if we're using a KB&M, they'll always use the same vtable
-			CREATE_VTABLE_PATCH(PtrVirtual<9>(reinterpret_cast<uintptr_t>(this->keyboard)), IDIDevice8_GetDeviceState);
+			CREATE_VTABLE_PATCH(Keyboard_GetDeviceState, IDIDevice8_GetDeviceState);
 		}
 	}
 }
@@ -35,20 +49,36 @@ IO::~IO()
 	{
 		if (!this->mouse)
 		{
-			Unpatch(PtrVirtual<9>(reinterpret_cast<uintptr_t>(this->keyboard)));
+			auto Keyboard_GetDeviceState = PtrVirtual<9>(reinterpret_cast<uintptr_t>(this->keyboard));
+			Unprotect _(Keyboard_GetDeviceState, 4);
+
+			Unpatch(Keyboard_GetDeviceState);
 		}
-		Unpatch(PtrVirtual<10>(reinterpret_cast<uintptr_t>(this->keyboard)));
+
+		auto Keyboard_GetDeviceData = PtrVirtual<10>(reinterpret_cast<uintptr_t>(this->keyboard));
+		Unprotect _(Keyboard_GetDeviceData, 4);
+
+		Unpatch(Keyboard_GetDeviceData);
 	}
 	if (this->mouse)
 	{
 		if (!this->keyboard)
 		{
-			Unpatch(PtrVirtual<10>(reinterpret_cast<uintptr_t>(this->mouse)));
+			auto Mouse_GetDeviceData = PtrVirtual<10>(reinterpret_cast<uintptr_t>(this->mouse));
+			Unprotect _(Mouse_GetDeviceData, 4);
+
+			Unpatch(Mouse_GetDeviceData);
 		}
-		Unpatch(PtrVirtual<9>(reinterpret_cast<uintptr_t>(this->mouse)));
+
+		auto Mouse_GetDeviceState = PtrVirtual<9>(reinterpret_cast<uintptr_t>(this->mouse));
+		Unprotect _(Mouse_GetDeviceState, 4);
+
+		Unpatch(Mouse_GetDeviceState);
 	}
 
 	SetWindowLongPtr(this->window, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(this->original_wndproc));
+
+	IO::instance = nullptr;
 }
 
 LRESULT CALLBACK IO::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -57,6 +87,7 @@ LRESULT CALLBACK IO::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	if (!this_)
 	{
 		Error("IO::WndProc called but no IO instance.");
+		DIE();
 		return 0L;
 	}
 
@@ -112,6 +143,7 @@ HRESULT __stdcall IO::IDIDevice8_GetDeviceState_(LPVOID device, DWORD cbData, LP
 	if (!this_)
 	{
 		Error("IO::IDIDevice8_GetDeviceState_ called but no IO instance.");
+		DIE();
 		return result;
 	}
 
@@ -141,6 +173,7 @@ HRESULT __stdcall IO::IDIDevice8_GetDeviceData_(LPVOID device, DWORD cbObjectDat
 	if (!this_)
 	{
 		Error("IO::IDIDevice8_GetDeviceState_ called but no IO instance.");
+		DIE();
 		return result;
 	}
 
@@ -164,13 +197,12 @@ IO* IO::Get(HWND window, LPVOID keyboard, LPVOID mouse)
 {
 	if (!IO::instance && window)
 	{
-		IO::instance = new IO(window, keyboard, mouse);
+		new IO(window, keyboard, mouse);
 	}
 	return IO::instance;
 }
 
 void IO::End()
 {
-	IO::instance = nullptr;
 	delete this;
 }

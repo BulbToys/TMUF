@@ -92,6 +92,8 @@ void GUI::Overlay::Render()
 
 GUI::GUI(LPVOID device, HWND window)
 {
+	GUI::instance = this;
+
 	this->device = device;
 
 	ImGui::CreateContext();
@@ -203,6 +205,8 @@ GUI::~GUI()
 	ImGui::DestroyContext();
 	
 	IWindow::DestroyAll();
+
+	GUI::instance = nullptr;
 }
 
 void GUI::Render()
@@ -251,37 +255,44 @@ void GUI::Render()
 
 void GUI::PatchVTables(PatchMode pm)
 {
+	auto EndScene = PtrVirtual<42>(reinterpret_cast<uintptr_t>(this->device));
+	auto Reset = PtrVirtual<16>(reinterpret_cast<uintptr_t>(this->device));
+	auto BeginStateBlock = PtrVirtual<60>(reinterpret_cast<uintptr_t>(this->device));
+
+	Unprotect u1(EndScene, 4);
+	Unprotect u2(Reset, 4);
+	Unprotect u3(BeginStateBlock, 4);
+
 	if (pm == PatchMode::Unpatch || pm == PatchMode::Repatch)
 	{
-		Unpatch(PtrVirtual<60>(reinterpret_cast<uintptr_t>(this->device)));
+		Unpatch(BeginStateBlock);
 
-		Unpatch(PtrVirtual<16>(reinterpret_cast<uintptr_t>(this->device)));
-		Unpatch(PtrVirtual<42>(reinterpret_cast<uintptr_t>(this->device)));
+		Unpatch(Reset);
+		Unpatch(EndScene);
 	}
 
 	if (pm == PatchMode::Patch || pm == PatchMode::Repatch)
 	{
-		CREATE_VTABLE_PATCH(PtrVirtual<42>(reinterpret_cast<uintptr_t>(this->device)), ID3DDevice9_EndScene);
-		CREATE_VTABLE_PATCH(PtrVirtual<16>(reinterpret_cast<uintptr_t>(this->device)), ID3DDevice9_Reset);
+		CREATE_VTABLE_PATCH(EndScene, ID3DDevice9_EndScene);
+		CREATE_VTABLE_PATCH(Reset, ID3DDevice9_Reset);
 
-		CREATE_VTABLE_PATCH(PtrVirtual<60>(reinterpret_cast<uintptr_t>(this->device)), ID3DDevice9_BeginStateBlock);
+		CREATE_VTABLE_PATCH(BeginStateBlock, ID3DDevice9_BeginStateBlock);
 	}
 }
 
 HRESULT __stdcall GUI::ID3DDevice9_EndScene_(LPVOID device)
 {
-	auto result = GUI::ID3DDevice9_EndScene(device);
-
 	auto this_ = GUI::instance;
 	if (!this_)
 	{
 		Error("GUI::ID3DDevice9_EndScene_ called but no GUI instance.");
-		return result;
+		DIE();
+		return GUI::ID3DDevice9_EndScene(device);
 	}
 
 	if (device != this_->device)
 	{
-		return result;
+		return GUI::ID3DDevice9_EndScene(device);
 	}
 
 	ImGui_ImplDX9_NewFrame();
@@ -306,7 +317,7 @@ HRESULT __stdcall GUI::ID3DDevice9_EndScene_(LPVOID device)
 	ImGui::Render();
 	ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
 
-	return result;
+	return GUI::ID3DDevice9_EndScene(device);
 }
 
 HRESULT __stdcall GUI::ID3DDevice9_Reset_(LPVOID device, LPVOID params)
@@ -315,6 +326,7 @@ HRESULT __stdcall GUI::ID3DDevice9_Reset_(LPVOID device, LPVOID params)
 	if (!this_)
 	{
 		Error("GUI::ID3DDevice9_Reset_ called but no GUI instance.");
+		DIE();
 		return GUI::ID3DDevice9_Reset(device, params);
 	}
 
@@ -337,6 +349,7 @@ HRESULT __stdcall GUI::ID3DDevice9_BeginStateBlock_(LPVOID device)
 	if (!this_)
 	{
 		Error("GUI::ID3DDevice9_BeginStateBlock_ called but no GUI instance.");
+		DIE();
 		return result;
 	}
 
@@ -378,14 +391,13 @@ GUI* GUI::Get(LPVOID device, HWND window)
 {
 	if (!GUI::instance && device && window)
 	{
-		GUI::instance = new GUI(device, window);
+		new GUI(device, window);
 	}
 	return GUI::instance;
 }
 
 void GUI::End()
 {
-	GUI::instance = nullptr;
 	delete this;
 }
 
