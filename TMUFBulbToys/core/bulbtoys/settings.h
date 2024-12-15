@@ -26,7 +26,8 @@ class Settings
 	void InitKeyMap();
 	void DeleteKeyMap();
 public:
-	static Settings* Get(const char* filename = nullptr);
+	static void Init(const char* filename);
+	static Settings* Get();
 	void End();
 
 	inline char* VKToStr(uint8_t vk) { return keys.at(vk); }

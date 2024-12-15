@@ -259,6 +259,7 @@ void GUI::PatchVTables(PatchMode pm)
 	auto Reset = PtrVirtual<16>(reinterpret_cast<uintptr_t>(this->device));
 	auto BeginStateBlock = PtrVirtual<60>(reinterpret_cast<uintptr_t>(this->device));
 
+	// Usually not necessary, but some things (like the Steam overlay) mess with the protection
 	Unprotect u1(EndScene, 4);
 	Unprotect u2(Reset, 4);
 	Unprotect u3(BeginStateBlock, 4);
@@ -280,7 +281,7 @@ void GUI::PatchVTables(PatchMode pm)
 	}
 }
 
-HRESULT __stdcall GUI::ID3DDevice9_EndScene_(LPVOID device)
+HRESULT APIENTRY GUI::ID3DDevice9_EndScene_(LPVOID device)
 {
 	auto this_ = GUI::instance;
 	if (!this_)
@@ -310,7 +311,7 @@ HRESULT __stdcall GUI::ID3DDevice9_EndScene_(LPVOID device)
 		IWindow::List().push_back(window);
 	}
 
-	// TODO: frame count fixes?
+	// TODO: If called multiple times per frame, FPS counter will be incorrect. FIXME FIXME FIXME
 	this_->Render();
 
 	ImGui::EndFrame();
@@ -320,7 +321,7 @@ HRESULT __stdcall GUI::ID3DDevice9_EndScene_(LPVOID device)
 	return GUI::ID3DDevice9_EndScene(device);
 }
 
-HRESULT __stdcall GUI::ID3DDevice9_Reset_(LPVOID device, LPVOID params)
+HRESULT APIENTRY GUI::ID3DDevice9_Reset_(LPVOID device, LPVOID params)
 {
 	auto this_ = GUI::instance;
 	if (!this_)
@@ -338,10 +339,11 @@ HRESULT __stdcall GUI::ID3DDevice9_Reset_(LPVOID device, LPVOID params)
 	ImGui_ImplDX9_InvalidateDeviceObjects();
 	const auto result = GUI::ID3DDevice9_Reset(device, params);
 	ImGui_ImplDX9_CreateDeviceObjects();
+
 	return result;
 }
 
-HRESULT __stdcall GUI::ID3DDevice9_BeginStateBlock_(LPVOID device)
+HRESULT APIENTRY GUI::ID3DDevice9_BeginStateBlock_(LPVOID device)
 {
 	auto result = GUI::ID3DDevice9_BeginStateBlock(device);
 
@@ -368,31 +370,74 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND, UINT, WPARAM,
 
 LRESULT CALLBACK GUI::WndProc(WNDPROC original_wndproc, HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	auto result = ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam);
-	if (result)
+	auto io = IO::Get();
+	auto& imgui_io = ImGui::GetIO();
+
+	// Keyboard input messages
+	if (uMsg >= WM_KEYFIRST && uMsg <= WM_KEYLAST)
 	{
-		return result;
+		// Are we allowed to read keyboard input from WndProc?
+		if (io->KeyboardInputAllowed(IO::InputMethod::WindowProcedure))
+		{
+			// Pass keyboard input to ImGui
+			auto result = ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam);
+			if (result)
+			{
+				return result;
+			}
+		}
+
+		// If ImGui is requesting to use our keyboard, block the input further down the window procedure chain
+		if (imgui_io.WantCaptureKeyboard)
+		{
+			return 0;
+		}
 	}
 
-	auto& io = ImGui::GetIO();
-	if (io.WantCaptureKeyboard && uMsg >= WM_KEYFIRST && uMsg <= WM_KEYLAST)
+	// Mouse input messages
+	else if (uMsg >= WM_MOUSEFIRST && uMsg <= WM_MOUSELAST)
 	{
-		return 0;
-	}
-	if (io.WantCaptureMouse && uMsg >= WM_MOUSEFIRST && uMsg <= WM_MOUSELAST)
-	{
-		return 0;
+		// Are we allowed to read mouse input from WndProc?
+		if (io->MouseInputAllowed(IO::InputMethod::WindowProcedure))
+		{
+			// Pass mouse input to ImGui
+			auto result = ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam);
+			if (result)
+			{
+				return result;
+			}
+		}
+
+		// If ImGui is requesting to use our mouse, block the input further down the window procedure chain
+		if (imgui_io.WantCaptureMouse)
+		{
+			return 0;
+		}
 	}
 
-	return CallWindowProc(original_wndproc, hWnd, uMsg, wParam, lParam);
+	// All other messages
+	else
+	{
+		// Pass miscellaneous messages to ImGui
+		auto result = ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam);
+		if (result)
+		{
+			return result;
+		}
+	}
+
+	// In all the above cases, keep calling our own window procedure until ImGui's window procedure returns TRUE
+	return CallWindowProcA(original_wndproc, hWnd, uMsg, wParam, lParam);
 }
 
-GUI* GUI::Get(LPVOID device, HWND window)
+void GUI::Init(LPVOID device, HWND window)
 {
-	if (!GUI::instance && device && window)
-	{
-		new GUI(device, window);
-	}
+	ASSERT(!GUI::instance);
+	new GUI(device, window);
+}
+
+GUI* GUI::Get()
+{
 	return GUI::instance;
 }
 

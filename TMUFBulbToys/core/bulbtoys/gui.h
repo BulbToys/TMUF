@@ -58,7 +58,8 @@ class GUI
 	static LRESULT CALLBACK WndProc(WNDPROC original_wndproc, HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	friend class IO; // Sadly necessary so the IO can call our WndProc (friend function will not work)
 public:
-	static GUI* Get(LPVOID device = nullptr, HWND window = 0);
+	static void Init(LPVOID device, HWND window);
+	static GUI* Get();
 	void End();
 };
 

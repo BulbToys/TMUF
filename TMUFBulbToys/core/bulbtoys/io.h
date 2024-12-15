@@ -7,6 +7,14 @@ class IO
 public:
 	using OnKeyDownFn = void();
 	using OnKeyUpFn = void();
+
+	enum InputMethod : uint8_t
+	{
+		WindowProcedure = 1 << 0,
+		DeviceState = 1 << 1,
+		DeviceData = 1 << 2,
+		IM_MAX = 1 << 3,
+	};
 private:
 	std::vector<OnKeyDownFn*> on_key_down[256];
 	std::vector<OnKeyUpFn*> on_key_up[256];
@@ -56,11 +64,16 @@ private:
 	LPVOID keyboard = nullptr;
 	LPVOID mouse = nullptr;
 
-	IO(HWND window, LPVOID keyboard, LPVOID mouse);
+	uint8_t keyboard_im = 0;
+	uint8_t mouse_im = 0;
+
+	IO(HWND window, LPVOID keyboard, LPVOID mouse, uint8_t keyboard_im, uint8_t mouse_im);
 	~IO();
 
-	WNDPROC original_wndproc = nullptr;
-	static LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	void HotkeyDown(int key);
+	void HotkeyUp(int key);
+
+	void DI8_DeviceState_KeyboardInput(char* keys);
 
 	using DiGetDeviceStateFn = long(__stdcall)(LPVOID, DWORD, LPVOID);
 	static DiGetDeviceStateFn IDIDevice8_GetDeviceState_;
@@ -70,8 +83,11 @@ private:
 	static DiGetDeviceDataFn IDIDevice8_GetDeviceData_;
 	static inline DiGetDeviceDataFn* IDIDevice8_GetDeviceData = nullptr;
 
+	WNDPROC original_wndproc = nullptr;
+	static LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 public:
-	static IO* Get(HWND window = 0, LPVOID keyboard = nullptr, LPVOID mouse = nullptr);
+	static void Init(HWND window, LPVOID keyboard, LPVOID mouse, uint8_t keyboard_im, uint8_t mouse_im);
+	static IO* Get();
 	void End();
 
 	inline void Detach() { done = true; }
@@ -79,4 +95,13 @@ public:
 
 	inline HWND Window() { return window; }
 	inline bool KeyHeld(char vk) { return key_held[vk]; }
+
+	inline bool KeyboardInputAllowed(InputMethod im) { return (keyboard_im & im) != 0; }
+	inline bool MouseInputAllowed(InputMethod im) { return (mouse_im & im) != 0; }
+
+	inline void SetKeyboardInputMethod(int im) { keyboard_im = im; }
+	inline int& SetMouseInputMethod(int im) { mouse_im = im; }
+
+	static uint8_t DIKToVK(uint8_t dik);
+	static int DIKToIM(uint8_t dik);
 };

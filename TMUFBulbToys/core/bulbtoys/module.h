@@ -8,10 +8,10 @@ public:
 	// The drawing order is always according to the enum, from top to bottom
 	enum struct DrawType
 	{
-		// Inside the main window.
+		// Inside the main window
 		MainWindow,
 
-		// Inside the overlay.
+		// Inside the overlay
 		Overlay,
 	};
 

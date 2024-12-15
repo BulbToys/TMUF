@@ -2,6 +2,8 @@
 
 Settings::Settings(const char* filename)
 {
+	Settings::instance = this;
+
 	this->filename = filename;
 	mINI::INIFile file(filename);
 	mINI::INIStructure file_ini;
@@ -65,20 +67,23 @@ Settings::~Settings()
 	file.write(Settings::ini, true);
 
 	this->DeleteKeyMap();
+
+	Settings::instance = nullptr;
 }
 
-Settings* Settings::Get(const char* filename)
+void Settings::Init(const char* filename)
 {
-	if (!Settings::instance && filename)
-	{
-		Settings::instance = new Settings(filename);
-	}
+	ASSERT(!Settings::instance);
+	new Settings(filename);
+}
+
+Settings* Settings::Get()
+{
 	return Settings::instance;
 }
 
 void Settings::End()
 {
-	Settings::instance = nullptr;
 	delete this;
 }
 

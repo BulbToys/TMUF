@@ -66,7 +66,7 @@ bool BulbToys::Init(BulbToys::SetupParams& params, bool thread)
 	}
 
 	// Settings
-	Settings::Get(params.settings_file);
+	Settings::Init(params.settings_file);
 
 	LPVOID d3d9_device = nullptr;
 	LPVOID keyboard_device = nullptr;
@@ -134,13 +134,13 @@ bool BulbToys::Init(BulbToys::SetupParams& params, bool thread)
 	ID3DDevice9_GetCreationParameters(d3d9_device, &d3d_params);
 
 	auto window = Read<HWND>(reinterpret_cast<uintptr_t>(&d3d_params) + 0x8);
-	IO::Get(window, keyboard_device, mouse_device);
+	IO::Init(window, keyboard_device, mouse_device, params.keyboard_input_method, params.mouse_input_method);
 
 	// GUI
 	Settings::Bool<"BulbToys", "UseGUI", true> use_gui;
 	if (use_gui.Get())
 	{
-		GUI::Get(d3d9_device, window);
+		GUI::Init(d3d9_device, window);
 	}
 
 	// Modules

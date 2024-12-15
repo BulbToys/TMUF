@@ -7,7 +7,7 @@
 
 #define PROJECT_NAME "BulbToys"
 
-#define DIE() *((int*)0xDEAD) = 0
+#define DIE() do { *((int*)0xDEAD) = 0; PostQuitMessage(0); } while (false)
 #define ASSERT(cond) do { if (!(cond)) { Error("Assertion failed: " #cond); DIE(); } } while (false)
 
 #define MYPRINTF(dest, size, fmt, ...) _snprintf_s(dest, size, size - 1, fmt, __VA_ARGS__)
