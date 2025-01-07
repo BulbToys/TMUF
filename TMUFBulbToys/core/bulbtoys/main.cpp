@@ -134,7 +134,7 @@ bool BulbToys::Init(BulbToys::SetupParams& params, bool thread)
 	ID3DDevice9_GetCreationParameters(d3d9_device, &d3d_params);
 
 	auto window = Read<HWND>(reinterpret_cast<uintptr_t>(&d3d_params) + 0x8);
-	IO::Init(window, keyboard_device, mouse_device, params.keyboard_input_method, params.mouse_input_method);
+	IO::Init(thread, window, keyboard_device, mouse_device, params.keyboard_input_method, params.mouse_input_method);
 
 	// GUI
 	Settings::Bool<"BulbToys", "UseGUI", true> use_gui;

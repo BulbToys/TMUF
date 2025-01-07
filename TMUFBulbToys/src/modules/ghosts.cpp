@@ -5,16 +5,13 @@ namespace ghosts
 {
 	const char* skin_methods[] = { "Vanilla (CRC32)", "Random", "Min/Max (Inclusive)" };
 
-	namespace SkinMethod
+	enum SkinMethod : int
 	{
-		enum
-		{
-			VANILLA = 0,
-			RANDOM,
-			MIN_MAX
-		};
-	}
-	int skin_method = SkinMethod::VANILLA;
+		Vanilla = 0,
+		Random,
+		MinMax
+	};
+	int skin_method = SkinMethod::Vanilla;
 
 	uint32_t min_index = 0;
 	uint32_t max_index = 0;
@@ -28,7 +25,7 @@ namespace ghosts
 				ImGui::Text("Medal ghost skin method:");
 				ImGui::Combo("##GhostsPanelSkinMethod", &skin_method, skin_methods, IM_ARRAYSIZE(skin_methods));
 
-				ImGui::BeginDisabled(skin_method != SkinMethod::MIN_MAX);
+				ImGui::BeginDisabled(skin_method != SkinMethod::MinMax);
 
 				ImGui::Text("Minimum/Maximum index:");
 				if (ImGui::InputScalar("##GhostsPanelMin", ImGuiDataType_U32, &min_index) && min_index > max_index)
@@ -71,11 +68,11 @@ namespace ghosts
 
 	void __fastcall CTrackManiaRace_Ghosts_SetRandomGhostSkin_(uintptr_t c_tm_race, uintptr_t edx, void* c_game_ctn_ghost, uint32_t index)
 	{
-		if (skin_method == SkinMethod::RANDOM)
+		if (skin_method == SkinMethod::Random)
 		{
 			index = -1;
 		}
-		else if (skin_method == SkinMethod::MIN_MAX)
+		else if (skin_method == SkinMethod::MinMax)
 		{
 			index = index % (max_index - min_index + 1) + min_index;
 		}

@@ -6,23 +6,15 @@
 
 namespace ImGui
 {
-	// ListBox with text at the top
-	bool BulbToys_ListBox(const char* text, const char* id, int* current_item, const char* const* items, int items_count, int height_in_items = -1);
-
-	// SliderFloat with text at the top
-	bool BulbToys_SliderFloat(const char* text, const char* id, float* v, float v_min, float v_max, const char* format = "%.3f");
-
-	// SliderInt with text at the top
-	bool BulbToys_SliderInt(const char* text, const char* id, int* v, int v_min, int v_max, const char* format = "%d");
+	// A custom text label with an address right after it, as well as a "Copy to Clipboard" button
+	void BulbToys_AddyLabel(uintptr_t addy, const char* fmt, ...);
 
 	// Dead simple drop-down menu implementation. !! DO NOT USE RECURSIVELY !!
 	bool BulbToys_Menu(const char* menu_name, const char* menu_label = nullptr);
 
-	// InputInt with text at the top. !! min AND max ARE INCLUSIVE !!
-	bool BulbToys_InputInt(const char* text, const char* id, int* i, int min = (-2147483647 - 1), int max = 2147483647);
+	bool BulbToys_Overlay_BeginTable(const char* str_id);
 
-	// A custom text label with an address right after it, as well as a "Copy to Clipboard" button
-	void BulbToys_AddyLabel(uintptr_t addy, const char* fmt, ...);
+	void BulbToys_Overlay_EndTable();
 }
 
 // Blank slate for drawing ImGui widgets - primarily used by MainWindow and the overlay

@@ -4,22 +4,25 @@
 #include "my_imgui.h"
 #include "io.h"
 
-bool ImGui::BulbToys_ListBox(const char* text, const char* id, int* current_item, const char* const* items, int items_count, int height_in_items)
+void ImGui::BulbToys_AddyLabel(uintptr_t addy, const char* fmt, ...)
 {
-	ImGui::Text(text);
-	return ImGui::ListBox(id, current_item, items, items_count, items_count);
-}
+	// Format label text
+	char name[64];
+	va_list va;
+	va_start(va, fmt);
+	vsprintf_s(name, 64, fmt, va);
 
-bool ImGui::BulbToys_SliderFloat(const char* text, const char* id, float* v, float v_min, float v_max, const char* format)
-{
-	ImGui::Text(text);
-	return ImGui::SliderFloat(id, v, v_min, v_max, format);
-}
+	// Append address
+	ImGui::Text("%s: %p", name, addy);
 
-bool ImGui::BulbToys_SliderInt(const char* text, const char* id, int* v, int v_min, int v_max, const char* format)
-{
-	ImGui::Text(text);
-	return ImGui::SliderInt(id, v, v_min, v_max, format);
+	char button[16];
+	sprintf_s(button, 16, "copy" "##%08X", addy);
+
+	ImGui::SameLine();
+	if (ImGui::Button(button))
+	{
+		CopyToClipboard<9>("%08X", addy);
+	}
 }
 
 bool ImGui::BulbToys_Menu(const char* menu_name, const char* menu_label)
@@ -61,45 +64,30 @@ bool ImGui::BulbToys_Menu(const char* menu_name, const char* menu_label)
 	return show;
 }
 
-bool ImGui::BulbToys_InputInt(const char* text, const char* id, int* i, int min, int max)
+bool ImGui::BulbToys_Overlay_BeginTable(const char* str_id)
 {
-	ImGui::Text(text);
-	if (ImGui::InputInt(id, i))
+	if (!ImGui::BeginTable(str_id, 1, ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_NoHostExtendX))
 	{
-		if (*i < min)
-		{
-			*i = min;
-		}
-		else if (*i > max)
-		{
-			*i = max;
-		}
-
-		return true;
+		return false;
 	}
 
-	return false;
+	ImGui::TableNextRow();
+	ImGui::TableSetColumnIndex(0);
+	ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, ImGui::GetColorU32({ .0f, .0f, .0f, .6f }));
+
+	ImGui::Dummy({ 0, 0 });
+	ImGui::SameLine(11, -1);
+
+	ImGui::BeginGroup();
+
+	return true;
 }
 
-void ImGui::BulbToys_AddyLabel(uintptr_t addy, const char* fmt, ...)
+void ImGui::BulbToys_Overlay_EndTable()
 {
-	// Format label text
-	char name[64];
-	va_list va;
-	va_start(va, fmt);
-	vsprintf_s(name, 64, fmt, va);
+	ImGui::EndGroup();
 
-	// Append address
-	ImGui::Text("%s: %p", name, addy);
-
-	char button[16];
-	sprintf_s(button, 16, "copy" "##%08X", addy);
-
-	ImGui::SameLine();
-	if (ImGui::Button(button))
-	{
-		CopyToClipboard<9>("%08X", addy);
-	}
+	ImGui::EndTable();
 }
 
 void IWindow::Construct(bool push_width, ImGuiWindowFlags flags, const char* fmt, va_list args)

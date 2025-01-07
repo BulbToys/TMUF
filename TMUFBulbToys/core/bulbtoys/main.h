@@ -21,7 +21,7 @@ namespace BulbToys
 		DeviceData = 1 << 2,
 
 		// Sanity check - do not use!
-		IM_MAX = 1 << 3,
+		_MAX = 1 << 3,
 	};
 
 	struct SetupParams

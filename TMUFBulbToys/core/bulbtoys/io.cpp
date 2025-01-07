@@ -2,10 +2,11 @@
 #include "hook.h"
 #include "gui.h"
 
-IO::IO(HWND window, LPVOID keyboard, LPVOID mouse, uint8_t keyboard_im, uint8_t mouse_im)
+IO::IO(bool thread, HWND window, LPVOID keyboard, LPVOID mouse, uint8_t keyboard_im, uint8_t mouse_im)
 {
 	IO::instance = this;
 
+	this->thread = thread;
 	this->window = window;
 	this->keyboard = keyboard;
 	this->mouse = mouse;
@@ -309,12 +310,12 @@ LRESULT CALLBACK IO::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	}
 }
 
-void IO::Init(HWND window, LPVOID keyboard, LPVOID mouse, uint8_t keyboard_im, uint8_t mouse_im)
+void IO::Init(bool thread, HWND window, LPVOID keyboard, LPVOID mouse, uint8_t keyboard_im, uint8_t mouse_im)
 {
 	ASSERT(!IO::instance);
-	ASSERT(keyboard_im < IO::InputMethod::IM_MAX);
-	ASSERT(mouse_im < IO::InputMethod::IM_MAX);
-	new IO(window, keyboard, mouse, keyboard_im, mouse_im);
+	ASSERT(keyboard_im < IO::InputMethod::_MAX);
+	ASSERT(mouse_im < IO::InputMethod::_MAX);
+	new IO(thread, window, keyboard, mouse, keyboard_im, mouse_im);
 }
 
 IO* IO::Get()

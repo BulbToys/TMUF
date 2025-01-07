@@ -189,6 +189,40 @@ bool PatchInfo::SanityCheck()
 	return true;
 }
 
+void Stopwatch::Start()
+{
+	if (!this->Running())
+	{
+		auto elapsed = (this->Elapsed() * this->frequency.QuadPart) / 1000000;
+
+		QueryPerformanceCounter(&this->start_time);
+
+		start_time.QuadPart -= elapsed;
+		stop_time = { 0 };
+	}
+}
+
+void Stopwatch::Stop()
+{
+	if (this->Running())
+	{
+		QueryPerformanceCounter(&this->stop_time);
+	}
+}
+
+long long Stopwatch::Elapsed()
+{
+	if (this->Running())
+	{
+		LARGE_INTEGER current_time { 0 };
+		QueryPerformanceCounter(&current_time);
+
+		return ((current_time.QuadPart - this->start_time.QuadPart) * 1000000) / this->frequency.QuadPart;
+	}
+
+	return ((this->stop_time.QuadPart - this->start_time.QuadPart) * 1000000) / this->frequency.QuadPart;
+}
+
 void PatchCall(uintptr_t address, void* func)
 {
 	ASSERT(Read<uint8_t>(address) == 0xE8);

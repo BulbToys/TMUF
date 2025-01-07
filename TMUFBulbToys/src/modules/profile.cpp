@@ -31,7 +31,8 @@ namespace profile
 				ImGui::Separator();
 
 				static int nick_max_len = 45;
-				if (ImGui::BulbToys_SliderInt("EntryNickname MaxLength (default: 45)", "##NickMaxLen", &nick_max_len, 0, 75))
+				ImGui::Text("EntryNickname MaxLength (default: 45)");
+				if (ImGui::SliderInt("##NickMaxLen", &nick_max_len, 0, 75))
 				{
 					uintptr_t entry_nick = TMUF::BulbToys_GetControlFromFrame("FrameProfile2", "EntryNickName");
 					Write<int>(entry_nick + 0x150, nick_max_len);
@@ -50,6 +51,21 @@ namespace profile
 						Write<int>(entry_txtbmp + 0x150, 10);
 					}
 				}
+				/*
+				static bool unlimiter_track_name_text = false;
+				if (ImGui::Checkbox("Unlimited track name text", &unlimiter_track_name_text))
+				{
+					uintptr_t entry_trackname = TMUF::BulbToys_GetControlFromFrame("FrameDialogSaveAs", "EntryFileName");
+					if (unlimiter_track_name_text)
+					{
+						Write<int>(entry_trackname + 0x150, -1);
+					}
+					else
+					{
+						Write<int>(entry_trackname + 0x150, 10);
+					}
+				}
+				*/
 			}
 
 			return true;

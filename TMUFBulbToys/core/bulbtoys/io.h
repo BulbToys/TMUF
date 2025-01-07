@@ -13,7 +13,7 @@ public:
 		WindowProcedure = 1 << 0,
 		DeviceState = 1 << 1,
 		DeviceData = 1 << 2,
-		IM_MAX = 1 << 3,
+		_MAX = 1 << 3,
 	};
 private:
 	std::vector<OnKeyDownFn*> on_key_down[256];
@@ -57,9 +57,13 @@ public:
 	};
 private:
 	static inline IO* instance = nullptr;
+
+	bool thread = false;
 	bool done = false;
+
 	HWND window = 0;
-	bool key_held[256] { false };
+
+	bool key_held[256]{ false };
 
 	LPVOID keyboard = nullptr;
 	LPVOID mouse = nullptr;
@@ -67,7 +71,7 @@ private:
 	uint8_t keyboard_im = 0;
 	uint8_t mouse_im = 0;
 
-	IO(HWND window, LPVOID keyboard, LPVOID mouse, uint8_t keyboard_im, uint8_t mouse_im);
+	IO(bool thread, HWND window, LPVOID keyboard, LPVOID mouse, uint8_t keyboard_im, uint8_t mouse_im);
 	~IO();
 
 	void HotkeyDown(int key);
@@ -86,10 +90,11 @@ private:
 	WNDPROC original_wndproc = nullptr;
 	static LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 public:
-	static void Init(HWND window, LPVOID keyboard, LPVOID mouse, uint8_t keyboard_im, uint8_t mouse_im);
+	static void Init(bool thread, HWND window, LPVOID keyboard, LPVOID mouse, uint8_t keyboard_im, uint8_t mouse_im);
 	static IO* Get();
 	void End();
 
+	inline bool DetachAllowed() { return thread; }
 	inline void Detach() { done = true; }
 	inline bool Done() { return done; }
 

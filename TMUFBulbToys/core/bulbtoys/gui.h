@@ -14,21 +14,47 @@ class GUI
 	LPVOID device = nullptr;
 
 	static void CreateMainWindow();
-	IO::Hotkey<"CreateMainWindow", VK_F9> create_main_window { GUI::CreateMainWindow };
+	IO::Hotkey<"CreateMainWindow", VK_F9> create_main_window{ GUI::CreateMainWindow };
 
 	static void CloseAllWindows();
-	IO::Hotkey<"CloseAllWindows", VK_F8> close_all_windows { GUI::CloseAllWindows };
+	IO::Hotkey<"CloseAllWindows", VK_F8> close_all_windows{ GUI::CloseAllWindows };
 
 	class Overlay
 	{
+		bool enabled = true;
 		std::vector<IPanel*> panels;
 	public:
 		Overlay() { this->panels = Modules::Panels(Module::DrawType::Overlay); }
 		~Overlay();
 
+		inline bool& EnabledRef() { return enabled; }
+
 		void Render();
 	};
 	Overlay overlay;
+
+	class FrameCalc
+	{
+	public:
+		enum Type : int
+		{
+			None,
+			Early,
+			Late,
+			_MAX
+		};
+	private:
+		int type = Type::None;
+		int fps = 0;
+		int fps_limit = 0;
+	public:
+		inline int& TypeRef() { return type; }
+		inline int FPS() { return fps; }
+		inline int& FPSLimitRef() { return fps_limit; }
+
+		void Perform();
+	};
+	FrameCalc frame_calc;
 
 	GUI(LPVOID device, HWND window);
 	~GUI();
@@ -43,9 +69,9 @@ class GUI
 	};
 	void PatchVTables(PatchMode pm);
 
-	using DxEndSceneFn = long(__stdcall)(LPVOID);
-	static DxEndSceneFn ID3DDevice9_EndScene_;
-	static inline DxEndSceneFn* ID3DDevice9_EndScene = nullptr;
+	using DxPresentFn = long(__stdcall)(LPVOID, LPVOID, LPVOID, HWND, LPVOID);
+	static DxPresentFn ID3DDevice9_Present_;
+	static inline DxPresentFn* ID3DDevice9_Present = nullptr;
 
 	using DxResetFn = long(__stdcall)(LPVOID, LPVOID);
 	static DxResetFn ID3DDevice9_Reset_;
@@ -61,6 +87,12 @@ public:
 	static void Init(LPVOID device, HWND window);
 	static GUI* Get();
 	void End();
+
+	inline bool& Overlay_EnabledRef() { return overlay.EnabledRef(); }
+
+	inline int& FrameCalc_TypeRef() { return frame_calc.TypeRef(); }
+	inline int FrameCalc_FPS() { return frame_calc.FPS(); }
+	inline int& FrameCalc_FPSLimitRef() { return frame_calc.FPSLimitRef(); }
 };
 
 class MainWindow : public IWindow
@@ -92,4 +124,14 @@ public:
 
 	static uint8_t VProtRead(const uint8_t* address, size_t offset);
 	static void VProtWrite(uint8_t* address, size_t offset, uint8_t data);
+};
+
+class StopwatchWindow : public IWindow
+{
+	Stopwatch stopwatch;
+public:
+	StopwatchWindow() : IWindow("BulbToys Stopwatch") {}
+	~StopwatchWindow() override final {}
+
+	virtual bool Draw() override final;
 };

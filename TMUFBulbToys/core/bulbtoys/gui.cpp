@@ -1,3 +1,5 @@
+#include <intrin.h>
+
 #include "gui.h"
 #include "utils.h"
 #include "io.h"
@@ -31,34 +33,6 @@ GUI::Overlay::~Overlay()
 
 void GUI::Overlay::Render()
 {
-	// FPS counter
-	static uint32_t fps = 0;
-	bool update = false;
-
-	static LARGE_INTEGER frequency = []() {
-		LARGE_INTEGER frequency;
-		QueryPerformanceFrequency(&frequency);
-		return frequency;
-	}();
-
-	LARGE_INTEGER counter;
-	QueryPerformanceCounter(&counter);
-	static LARGE_INTEGER old_counter = counter;
-
-	static uint32_t frame_count = 0;
-	if (counter.QuadPart - old_counter.QuadPart >= frequency.QuadPart)
-	{
-		old_counter = counter;
-		fps = frame_count;
-		frame_count = 0;
-
-		update = true;
-	}
-	else
-	{
-		frame_count++;
-	}
-
 	RECT rect;
 	GetClientRect(IO::Get()->Window(), &rect);
 	float w = rect.right - rect.left;
@@ -69,7 +43,20 @@ void GUI::Overlay::Render()
 	if (ImGui::Begin("Overlay", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar |
 		ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoBackground))
 	{
-		ImGui::Text("%d FPS | Powered by BulbToys %d | Built on %s", fps, GIT_REV_COUNT + 1, BulbToys::GetBuildDateTime());
+		if (ImGui::BulbToys_Overlay_BeginTable("Watermark"))
+		{
+			auto gui = GUI::Get();
+			if (gui->FrameCalc_TypeRef() == GUI::FrameCalc::Type::None)
+			{
+				ImGui::Text("Powered by BulbToys %d | Built on %s", GIT_REV_COUNT + 1, BulbToys::GetBuildDateTime());
+			}
+			else
+			{
+				ImGui::Text("%d FPS | Powered by BulbToys %d | Built on %s", GUI::Get()->FrameCalc_FPS(), GIT_REV_COUNT + 1, BulbToys::GetBuildDateTime());
+			}
+
+			ImGui::BulbToys_Overlay_EndTable();
+		}
 
 		// Overlay module panels
 		auto iter = panels.begin();
@@ -87,6 +74,50 @@ void GUI::Overlay::Render()
 		}
 
 		ImGui::End();
+	}
+}
+
+void GUI::FrameCalc::Perform()
+{
+	static Stopwatch render_time;
+
+	if (render_time.Running())
+	{
+		render_time.Stop();
+
+		auto elapsed = render_time.Elapsed();
+
+		static Stopwatch fps_update_time;
+		if (!fps_update_time.Running())
+		{
+			fps_update_time.Start();
+		}
+
+		// Update visual FPS counter every second
+		if (fps_update_time.Elapsed() > 1000000)
+		{
+			this->fps = 1000000.0f / (float)elapsed;
+
+			fps_update_time.Reset();
+			fps_update_time.Start();
+		}
+
+		render_time.Reset();
+		render_time.Start();
+
+		// Limit our FPS if the option is enabled
+		if (this->fps_limit > 0)
+		{
+			int delay = ((1000.0f / this->fps_limit) - ((float)elapsed / 1000.0f));
+			if (delay > 0)
+			{
+				Sleep(delay);
+			}
+		}
+	}
+	else
+	{
+		render_time.Start();
 	}
 }
 
@@ -250,17 +281,22 @@ void GUI::Render()
 		}
 	}
 
-	overlay.Render();
+	if (overlay.EnabledRef())
+	{
+		overlay.Render();
+	}
 }
 
 void GUI::PatchVTables(PatchMode pm)
 {
-	auto EndScene = PtrVirtual<42>(reinterpret_cast<uintptr_t>(this->device));
-	auto Reset = PtrVirtual<16>(reinterpret_cast<uintptr_t>(this->device));
-	auto BeginStateBlock = PtrVirtual<60>(reinterpret_cast<uintptr_t>(this->device));
+	auto device = reinterpret_cast<uintptr_t>(this->device);
+
+	auto Present = PtrVirtual<17>(device);
+	auto Reset = PtrVirtual<16>(device);
+	auto BeginStateBlock = PtrVirtual<60>(device);
 
 	// Usually not necessary, but some things (like the Steam overlay) mess with the protection
-	Unprotect u1(EndScene, 4);
+	Unprotect u1(Present, 4);
 	Unprotect u2(Reset, 4);
 	Unprotect u3(BeginStateBlock, 4);
 
@@ -269,31 +305,44 @@ void GUI::PatchVTables(PatchMode pm)
 		Unpatch(BeginStateBlock);
 
 		Unpatch(Reset);
-		Unpatch(EndScene);
+		Unpatch(Present);
 	}
 
 	if (pm == PatchMode::Patch || pm == PatchMode::Repatch)
 	{
-		CREATE_VTABLE_PATCH(EndScene, ID3DDevice9_EndScene);
+		CREATE_VTABLE_PATCH(Present, ID3DDevice9_Present);
 		CREATE_VTABLE_PATCH(Reset, ID3DDevice9_Reset);
 
 		CREATE_VTABLE_PATCH(BeginStateBlock, ID3DDevice9_BeginStateBlock);
 	}
 }
 
-HRESULT APIENTRY GUI::ID3DDevice9_EndScene_(LPVOID device)
+HRESULT APIENTRY GUI::ID3DDevice9_Present_(LPVOID device, LPVOID pSourceRect, LPVOID pDestRect, HWND hDestWindowOverride, LPVOID pDirtyRegion)
 {
 	auto this_ = GUI::instance;
 	if (!this_)
 	{
-		Error("GUI::ID3DDevice9_EndScene_ called but no GUI instance.");
+		Error("GUI::ID3DDevice9_Present_ called but no GUI instance.");
 		DIE();
-		return GUI::ID3DDevice9_EndScene(device);
+		return GUI::ID3DDevice9_Present(device, pSourceRect, pDestRect, hDestWindowOverride, pDirtyRegion);
 	}
 
 	if (device != this_->device)
 	{
-		return GUI::ID3DDevice9_EndScene(device);
+		return GUI::ID3DDevice9_Present(device, pSourceRect, pDestRect, hDestWindowOverride, pDirtyRegion);
+	}
+
+	auto ret_addr = _ReturnAddress();
+	static auto my_ret_addr = ret_addr;
+	if (ret_addr != my_ret_addr)
+	{
+		return GUI::ID3DDevice9_Present(device, pSourceRect, pDestRect, hDestWindowOverride, pDirtyRegion);
+	}
+
+	auto frame_calc_type = this_->frame_calc.TypeRef();
+	if (frame_calc_type == GUI::FrameCalc::Type::Early)
+	{
+		this_->frame_calc.Perform();
 	}
 
 	ImGui_ImplDX9_NewFrame();
@@ -318,7 +367,14 @@ HRESULT APIENTRY GUI::ID3DDevice9_EndScene_(LPVOID device)
 	ImGui::Render();
 	ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
 
-	return GUI::ID3DDevice9_EndScene(device);
+	auto result = GUI::ID3DDevice9_Present(device, pSourceRect, pDestRect, hDestWindowOverride, pDirtyRegion);
+
+	if (frame_calc_type == GUI::FrameCalc::Type::Late)
+	{
+		this_->frame_calc.Perform();
+	}
+
+	return result;
 }
 
 HRESULT APIENTRY GUI::ID3DDevice9_Reset_(LPVOID device, LPVOID params)
@@ -514,20 +570,53 @@ bool MainWindow::Draw()
 {
 	if (ImGui::BulbToys_Menu("[Main]"))
 	{
+		auto gui = GUI::Get();
+		auto io = IO::Get();
+
 		ImGui::Text("Dear ImGui version: " IMGUI_VERSION);
 
+		ImGui::Checkbox("Enable overlay", &gui->Overlay_EnabledRef());
+
+		const char* frame_calc_methods[] = { "None", "Early", "Late" };
+		ImGui::Text("Frame calc method:");
+		ImGui::Combo("##FrameCalcMethod", &gui->FrameCalc_TypeRef(), frame_calc_methods, IM_ARRAYSIZE(frame_calc_methods));
+
+		static int fps_limit = 0;
+		static bool fps_limit_enabled = false;
+		if (ImGui::Checkbox("FPS Limit:", &fps_limit_enabled))
+		{
+			if (fps_limit_enabled)
+			{
+				gui->FrameCalc_FPSLimitRef() = fps_limit;
+			}
+			else
+			{
+				gui->FrameCalc_FPSLimitRef() = 0;
+			}
+		}
+
+		if (ImGui::InputInt("##FPSLimit", &fps_limit))
+		{
+			if (fps_limit_enabled)
+			{
+				gui->FrameCalc_FPSLimitRef() = fps_limit;
+			}
+		}
+
 		ImGui::Separator();
+		ImGui::BeginDisabled(!io->DetachAllowed());
 
 		if (ImGui::Button("Detach"))
 		{
 			if (this->confirm_close)
 			{
-				IO::Get()->Detach();
+				io->Detach();
 			}
 		}
 		ImGui::SameLine();
 		ImGui::Checkbox("Confirm", &this->confirm_close);
 
+		ImGui::EndDisabled();
 		ImGui::Separator();
 
 		ImGui::InputText("##MemEdit_InputAddr", this->input_addr, IM_ARRAYSIZE(this->input_addr), ImGuiInputTextFlags_CharsHexadecimal);
@@ -565,6 +654,12 @@ bool MainWindow::Draw()
 			new MemoryWindow(-1, 0x10000, false);
 		}
 
+		ImGui::Separator();
+
+		if (ImGui::Button("New Stopwatch"))
+		{
+			new StopwatchWindow();
+		}
 	}
 
 	if (ImGui::BulbToys_Menu("[Modules]"))
@@ -642,6 +737,53 @@ bool MainWindow::Draw()
 
 		++iter;
 	}
+
+	return true;
+}
+
+bool StopwatchWindow::Draw()
+{
+	long long elapsed = stopwatch.Elapsed();
+
+	int microseconds = elapsed;
+
+	int seconds = microseconds / 1000000;
+	microseconds %= 1000000;
+
+	int minutes = seconds / 60;
+	seconds %= 60;
+
+	int hours = minutes / 60;
+	minutes %= 60;
+
+	ImGui::Text("%02d:%02d:%02d.%06d", hours, minutes, seconds, microseconds);
+
+	ImGui::Separator();
+
+	bool running = stopwatch.Running();
+
+	//ImGui::BeginDisabled(running);
+	if (ImGui::Button("Start"))
+	{
+		stopwatch.Start();
+	}
+	//ImGui::EndDisabled();
+	ImGui::SameLine();
+	//ImGui::BeginDisabled(!running);
+	if (ImGui::Button("Stop"))
+	{
+		stopwatch.Stop();
+	}
+	ImGui::SameLine();
+	//ImGui::EndDisabled();
+	if (ImGui::Button("Reset"))
+	{
+		stopwatch.Reset();
+	}
+
+	ImGui::Separator();
+
+	ImGui::BulbToys_AddyLabel(reinterpret_cast<uintptr_t>(&this->stopwatch), "Address");
 
 	return true;
 }

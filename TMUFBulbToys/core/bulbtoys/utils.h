@@ -69,6 +69,35 @@ public:
 	static bool SanityCheck();
 };
 
+class Stopwatch
+{
+	inline static LARGE_INTEGER frequency = []
+	(){
+		LARGE_INTEGER frequency;
+		QueryPerformanceFrequency(&frequency);
+		return frequency;
+	}();
+
+	LARGE_INTEGER start_time { 0 };
+	LARGE_INTEGER stop_time { 0 };
+
+public:
+	// Starts, or resumes, measuring elapsed time. Starting a Stopwatch that is already running does nothing
+	void Start();
+
+	// Stops measuring elapsed time. Stopping a Stopwatch that is already stopped does nothing
+	void Stop();
+
+	// Gets whether the Stopwatch is currently measuring elapsed time or not
+	inline bool Running() { return start_time.QuadPart != 0 && stop_time.QuadPart == 0; }
+
+	// Stops measuring elapsed time and resets the elapsed time to zero
+	inline void Reset() { start_time = { 0 }; stop_time = { 0 }; }
+
+	// Gets the elapsed time in microseconds (1000us = 1ms)
+	long long Elapsed();
+};
+
 // Wrapper for string literals, primarily used for template arguments
 template <size_t N>
 struct StringLiteral
