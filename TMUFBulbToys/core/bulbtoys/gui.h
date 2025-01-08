@@ -38,9 +38,18 @@ class GUI
 	public:
 		enum Type : int
 		{
+			// Do not perform framerate calculations
 			None,
+
+			// Perform framerate calculations before presenting a frame (ID3DD9::Present) - default for old versions of MangoHud
+			// Ideal for stable framerates
 			Early,
+
+			// Perform framerate calculations after presenting a frame (ID3DD9::Present) - default for MangoHud, DXVK and libstrangle
+			// Ideal for low latency
 			Late,
+
+			// Sanity check - do not use!
 			_MAX
 		};
 	private:
@@ -48,6 +57,8 @@ class GUI
 		int fps = 0;
 		int fps_limit = 0;
 	public:
+		FrameCalc();
+
 		inline int& TypeRef() { return type; }
 		inline int FPS() { return fps; }
 		inline int& FPSLimitRef() { return fps_limit; }

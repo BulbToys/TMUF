@@ -77,6 +77,22 @@ void GUI::Overlay::Render()
 	}
 }
 
+GUI::FrameCalc::FrameCalc()
+{
+	Settings::String<"GUI", "FrameCalcType", "none", 7> setting;
+	auto value = setting.Get();
+
+	// Only psychopaths use mixed case here
+	if (!strcmp(value, "early") || !strcmp(value, "EARLY"))
+	{ 
+		this->type = Type::Early;
+	}
+	if (!strcmp(value, "late") || !strcmp(value, "LATE"))
+	{
+		this->type = Type::Late;
+	}
+}
+
 void GUI::FrameCalc::Perform()
 {
 	static Stopwatch render_time;
@@ -577,9 +593,12 @@ bool MainWindow::Draw()
 
 		ImGui::Checkbox("Enable overlay", &gui->Overlay_EnabledRef());
 
+		// Check GUI::FrameCalc::Type for more information about these
 		const char* frame_calc_methods[] = { "None", "Early", "Late" };
 		ImGui::Text("Frame calc method:");
 		ImGui::Combo("##FrameCalcMethod", &gui->FrameCalc_TypeRef(), frame_calc_methods, IM_ARRAYSIZE(frame_calc_methods));
+
+		ImGui::BeginDisabled(!gui->FrameCalc_TypeRef());
 
 		static int fps_limit = 0;
 		static bool fps_limit_enabled = false;
@@ -603,6 +622,8 @@ bool MainWindow::Draw()
 			}
 		}
 
+		ImGui::EndDisabled();
+
 		ImGui::Separator();
 		ImGui::BeginDisabled(!io->DetachAllowed());
 
@@ -619,6 +640,7 @@ bool MainWindow::Draw()
 		ImGui::EndDisabled();
 		ImGui::Separator();
 
+		ImGui::Text("Memory address:");
 		ImGui::InputText("##MemEdit_InputAddr", this->input_addr, IM_ARRAYSIZE(this->input_addr), ImGuiInputTextFlags_CharsHexadecimal);
 
 		// !!! THIS TANKS PERFORMANCE - USE SPARINGLY !!!
