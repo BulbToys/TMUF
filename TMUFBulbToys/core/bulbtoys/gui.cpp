@@ -45,14 +45,14 @@ void GUI::Overlay::Render()
 	{
 		if (ImGui::BulbToys_Overlay_BeginTable("Watermark"))
 		{
-			auto gui = GUI::Get();
-			if (gui->FrameCalc_TypeRef() == GUI::FrameCalc::Type::None)
+			auto frame_calc = GUI::Get()->FrameCalc();
+			if (frame_calc->Type() == GUI::FrameCalc::Type::None)
 			{
 				ImGui::Text("Powered by BulbToys %d | Built on %s", GIT_REV_COUNT + 1, BulbToys::GetBuildDateTime());
 			}
 			else
 			{
-				ImGui::Text("%d FPS | Powered by BulbToys %d | Built on %s", GUI::Get()->FrameCalc_FPS(), GIT_REV_COUNT + 1, BulbToys::GetBuildDateTime());
+				ImGui::Text("%d FPS | Powered by BulbToys %d | Built on %s", frame_calc->FPS(), GIT_REV_COUNT + 1, BulbToys::GetBuildDateTime());
 			}
 
 			ImGui::BulbToys_Overlay_EndTable();
@@ -84,7 +84,7 @@ GUI::FrameCalc::FrameCalc()
 
 	// Only psychopaths use mixed case here
 	if (!strcmp(value, "early") || !strcmp(value, "EARLY"))
-	{ 
+	{
 		this->type = Type::Early;
 	}
 	if (!strcmp(value, "late") || !strcmp(value, "LATE"))
@@ -297,7 +297,7 @@ void GUI::Render()
 		}
 	}
 
-	if (overlay.EnabledRef())
+	if (overlay.Enabled())
 	{
 		overlay.Render();
 	}
@@ -355,7 +355,7 @@ HRESULT APIENTRY GUI::ID3DDevice9_Present_(LPVOID device, LPVOID pSourceRect, LP
 		return GUI::ID3DDevice9_Present(device, pSourceRect, pDestRect, hDestWindowOverride, pDirtyRegion);
 	}
 
-	auto frame_calc_type = this_->frame_calc.TypeRef();
+	auto frame_calc_type = this_->frame_calc.Type();
 	if (frame_calc_type == GUI::FrameCalc::Type::Early)
 	{
 		this_->frame_calc.Perform();
@@ -587,18 +587,29 @@ bool MainWindow::Draw()
 	if (ImGui::BulbToys_Menu("[Main]"))
 	{
 		auto gui = GUI::Get();
+		auto frame_calc = gui->FrameCalc();
+		auto overlay = gui->Overlay();
+
 		auto io = IO::Get();
 
 		ImGui::Text("Dear ImGui version: " IMGUI_VERSION);
 
-		ImGui::Checkbox("Enable overlay", &gui->Overlay_EnabledRef());
+		static bool enable_overlay = overlay->Enabled();
+		if (ImGui::Checkbox("Enable overlay", &enable_overlay))
+		{
+			overlay->SetEnabled(enable_overlay);
+		}
 
 		// Check GUI::FrameCalc::Type for more information about these
+		static int frame_calc_type = frame_calc->Type();
 		const char* frame_calc_methods[] = { "None", "Early", "Late" };
 		ImGui::Text("Frame calc method:");
-		ImGui::Combo("##FrameCalcMethod", &gui->FrameCalc_TypeRef(), frame_calc_methods, IM_ARRAYSIZE(frame_calc_methods));
+		if (ImGui::Combo("##FrameCalcMethod", &frame_calc_type, frame_calc_methods, IM_ARRAYSIZE(frame_calc_methods)))
+		{
+			frame_calc->SetType(frame_calc_type);
+		}
 
-		ImGui::BeginDisabled(!gui->FrameCalc_TypeRef());
+		ImGui::BeginDisabled(!frame_calc->Type());
 
 		static int fps_limit = 0;
 		static bool fps_limit_enabled = false;
@@ -606,11 +617,11 @@ bool MainWindow::Draw()
 		{
 			if (fps_limit_enabled)
 			{
-				gui->FrameCalc_FPSLimitRef() = fps_limit;
+				frame_calc->SetFPSLimit(fps_limit);
 			}
 			else
 			{
-				gui->FrameCalc_FPSLimitRef() = 0;
+				frame_calc->SetFPSLimit(0);
 			}
 		}
 
@@ -618,7 +629,7 @@ bool MainWindow::Draw()
 		{
 			if (fps_limit_enabled)
 			{
-				gui->FrameCalc_FPSLimitRef() = fps_limit;
+				frame_calc->SetFPSLimit(fps_limit);
 			}
 		}
 
