@@ -127,6 +127,39 @@ public:
 /* ===== Templates ===== */
 
 template <size_t size = 1024>
+bool CopyToClipboardUnicode(const wchar_t* text, ...)
+{
+	auto mem = GlobalAlloc(GMEM_MOVEABLE, size * 2);
+	if (!mem)
+	{
+		return false;
+	}
+
+	auto ptr = GlobalLock(mem);
+	if (!ptr)
+	{
+		GlobalFree(mem);
+		return false;
+	}
+
+	wchar_t buffer[size] { 0 };
+	va_list va;
+	va_start(va, text);
+	vswprintf_s(buffer, size, text, va);
+
+	memcpy(ptr, buffer, size * 2);
+	GlobalUnlock(mem);
+
+	OpenClipboard(NULL);
+	EmptyClipboard();
+	SetClipboardData(CF_UNICODETEXT, mem);
+	CloseClipboard();
+
+	// The clipboard calls GlobalFree for us, no need to do it ourselves
+	return true;
+}
+
+template <size_t size = 1024>
 bool CopyToClipboard(const char* text, ...)
 {
 	auto mem = GlobalAlloc(GMEM_MOVEABLE, size);
