@@ -26,19 +26,11 @@ namespace trail
 				ImGui::Text("Medal ghost skin method:");
 				ImGui::Combo("##TrailPanelTrailMethod", &trail_method, trail_methods, IM_ARRAYSIZE(trail_methods));
 
-				ImGui::BeginDisabled(trail_method != TrailMethod::Forced);
-
 				ImGui::Text("Forced trail color:");
 				ImGui::ColorEdit3("##ForcedTrailColor", &forced_color.x);
 
-				ImGui::EndDisabled();
-
-				ImGui::BeginDisabled(trail_method != TrailMethod::HueWheel);
-
 				ImGui::Text("Hue Wheel increment:");
 				ImGui::SliderFloat("##HueWheelIncrement", &increment, 0.0001f, 0.01f);
-
-				ImGui::EndDisabled();
 			}
 
 			return true;
