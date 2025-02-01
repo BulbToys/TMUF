@@ -72,6 +72,37 @@ class GUI
 	};
 	Overlay overlay;
 
+	class TextureLoader
+	{
+		static constexpr size_t max_size = 1024 * 1024 * 32;
+
+		struct ImageBuffer : public IFile<ImageBuffer>
+		{
+			char data[max_size]{ 0 };
+
+			bool Validate() override final { return true; }
+		};
+		ImageBuffer image_buffer;
+
+		HMODULE library = nullptr;
+		DWORD lasterr_library = (1 << 29);
+
+		using D3DXCreateTextureFromFileInMemoryFn = HRESULT(WINAPI)(void* pDevice, void* pSrcData, UINT srcDataSize, ImTextureID* ppTexture);
+		D3DXCreateTextureFromFileInMemoryFn* CreateTexture = nullptr;
+		DWORD lasterr_CreateTexture = (1 << 29);
+	public:
+		TextureLoader();
+		~TextureLoader();
+
+		bool Online();
+
+		ImTextureID Load(const char* filename);
+		ImTextureID LoadDialog(const char* title = "Load Image");
+
+		void Unload(ImTextureID texture);
+	};
+	TextureLoader texture_loader;
+
 	GUI(LPVOID device, HWND window);
 	~GUI();
 
@@ -104,8 +135,11 @@ public:
 	static GUI* Get();
 	void End();
 
+	inline auto Device() { return device; }
+
 	inline auto FrameCalc() { return &frame_calc; }
 	inline auto Overlay() { return &overlay; }
+	inline auto TextureLoader() { return &texture_loader; }
 };
 
 class MainWindow : public IWindow

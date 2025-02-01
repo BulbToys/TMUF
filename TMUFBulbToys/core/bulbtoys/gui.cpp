@@ -19,64 +19,6 @@ void GUI::CloseAllWindows()
 	IWindow::CloseAll();
 }
 
-GUI::Overlay::~Overlay()
-{
-	auto iter = panels.begin();
-	while (iter != panels.end())
-	{
-		auto panel = *iter;
-
-		panels.erase(iter);
-		delete panel;
-	}
-}
-
-void GUI::Overlay::Render()
-{
-	RECT rect;
-	GetClientRect(IO::Get()->Window(), &rect);
-	float w = rect.right - rect.left;
-	float h = rect.bottom - rect.top;
-
-	ImGui::SetNextWindowPos(ImVec2(0, 0));
-	ImGui::SetNextWindowSize(ImVec2(w, h));
-	if (ImGui::Begin("Overlay", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar |
-		ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoBackground))
-	{
-		if (ImGui::BulbToys_Overlay_BeginTable("Watermark"))
-		{
-			auto frame_calc = GUI::Get()->FrameCalc();
-			if (frame_calc->Type() == GUI::FrameCalc::Type::None)
-			{
-				ImGui::Text("Powered by BulbToys %d | Built on %s", GIT_REV_COUNT + 1, BulbToys::GetBuildDateTime());
-			}
-			else
-			{
-				ImGui::Text("%d FPS | Powered by BulbToys %d | Built on %s", frame_calc->FPS(), GIT_REV_COUNT + 1, BulbToys::GetBuildDateTime());
-			}
-
-			ImGui::BulbToys_Overlay_EndTable();
-		}
-
-		// Overlay module panels
-		auto iter = panels.begin();
-		while (iter != panels.end())
-		{
-			auto panel = *iter;
-
-			if (!panel->Draw())
-			{
-				// A panel has ended the overlay and requested to end any further rendering immediately
-				return;
-			}
-
-			++iter;
-		}
-
-		ImGui::End();
-	}
-}
-
 GUI::FrameCalc::FrameCalc()
 {
 	Settings::String<"GUI", "FrameCalcType", "none", 7> setting;
@@ -135,6 +77,182 @@ void GUI::FrameCalc::Perform()
 	{
 		render_time.Start();
 	}
+}
+
+GUI::Overlay::~Overlay()
+{
+	auto iter = panels.begin();
+	while (iter != panels.end())
+	{
+		auto panel = *iter;
+
+		panels.erase(iter);
+		delete panel;
+	}
+}
+
+void GUI::Overlay::Render()
+{
+	RECT rect;
+	GetClientRect(IO::Get()->Window(), &rect);
+	float w = rect.right - rect.left;
+	float h = rect.bottom - rect.top;
+
+	ImGui::SetNextWindowPos(ImVec2(0, 0));
+	ImGui::SetNextWindowSize(ImVec2(w, h));
+	if (ImGui::Begin("Overlay", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar |
+		ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoBackground))
+	{
+		if (ImGui::BulbToys_Overlay_BeginTable("Watermark"))
+		{
+			auto frame_calc = GUI::Get()->FrameCalc();
+			if (frame_calc->Type() == GUI::FrameCalc::Type::None)
+			{
+				ImGui::Text("Powered by BulbToys %d | Built on %s", GIT_REV_COUNT + 1, BulbToys::GetBuildDateTime());
+			}
+			else
+			{
+				ImGui::Text("%d FPS | Powered by BulbToys %d | Built on %s", frame_calc->FPS(), GIT_REV_COUNT + 1, BulbToys::GetBuildDateTime());
+			}
+
+			ImGui::BulbToys_Overlay_EndTable();
+		}
+
+		// Overlay module panels
+		auto iter = panels.begin();
+		while (iter != panels.end())
+		{
+			auto panel = *iter;
+
+			if (!panel->Draw())
+			{
+				// A panel has ended the overlay and requested to end any further rendering immediately
+				return;
+			}
+
+			++iter;
+		}
+
+		ImGui::End();
+	}
+}
+
+
+GUI::TextureLoader::TextureLoader()
+{
+	library = LoadLibraryA("d3dx9_30.dll");
+	if (!library)
+	{
+		lasterr_library = GetLastError();
+		return;
+	}
+
+	CreateTexture = reinterpret_cast<decltype(CreateTexture)>(GetProcAddress(library, "D3DXCreateTextureFromFileInMemory"));
+	if (!CreateTexture)
+	{
+		lasterr_CreateTexture = GetLastError();
+		return;
+	}
+}
+
+GUI::TextureLoader::~TextureLoader()
+{
+	if (library)
+	{
+		auto result = FreeLibrary(library);
+		if (!result)
+		{
+			Error("FreeLibrary failed: %s", LastError().Message());
+		}
+	}
+}
+
+bool GUI::TextureLoader::Online()
+{
+	if (!library)
+	{
+		Error("LoadLibraryA failed: %s", LastError(lasterr_library).Message());
+		return false;
+	}
+
+	if (!CreateTexture)
+	{
+		Error("GetProcAddress failed: %s", LastError(lasterr_CreateTexture).Message());
+		return false;
+	}
+
+	return true;
+}
+
+ImTextureID GUI::TextureLoader::Load(const char* filename)
+{
+	if (!Online())
+	{
+		return nullptr;
+	}
+
+	auto len = image_buffer.Load(filename, true);
+	if (len == 0)
+	{
+		return nullptr;
+	}
+
+	ImTextureID texture;
+	auto result = CreateTexture(GUI::Get()->Device(), &image_buffer.data, len, &texture);
+	if (result)
+	{
+		Error("Failed to create texture with HRESULT 0x%08X", result);
+		return nullptr;
+	}
+
+	return texture;
+}
+
+ImTextureID GUI::TextureLoader::LoadDialog(const char* title)
+{
+	if (!Online())
+	{
+		return nullptr;
+	}
+
+	constexpr const char* const filter =
+		"Bitmap (*.bmp)\0*.bmp\0"
+		"DirectDraw Surface (*.dds)\0*.dds\0"
+		"Device Independent Bitmap (*.dib)\0*.dib\0"
+		"High Dynamic Range (*.hdr)\0*.hdr\0"
+		"JPG image (*.jpg)\0*.jpg\0"
+		"JPEG image (*.jpeg)\0*.jpeg\0"
+		"Portable FloatMap (*.pfm)\0*.pfm\0"
+		"Portable Network Graphics (*.png)\0*.png\0"
+		"Portable PixMap (*.ppm)\0*.ppm\0"
+		"Targa (*.tga)\0*.tga\0"
+		"All Files (*.*)\0*.*\0";
+
+	auto len = image_buffer.LoadDialog(title, filter, nullptr, true);
+	if (len == 0)
+	{
+		return nullptr;
+	}
+
+	ImTextureID texture;
+	auto result = CreateTexture(GUI::Get()->Device(), &image_buffer.data, len, &texture);
+	if (result)
+	{
+		Error("Failed to create texture with HRESULT 0x%08X", result);
+		return nullptr;
+	}
+
+	return texture;
+}
+
+void GUI::TextureLoader::Unload(ImTextureID texture)
+{
+	if (!Online())
+	{
+		return;
+	}
+
+	reinterpret_cast<IUnknown*>(texture)->Release();
 }
 
 GUI::GUI(LPVOID device, HWND window)

@@ -5,6 +5,25 @@
 #include "utils.h"
 #include "io.h"
 
+LastError::LastError(DWORD last_error)
+{
+	FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, last_error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+		(LPSTR)&message, 0, NULL);
+}
+
+LastError::~LastError()
+{
+	if (message)
+	{
+		LocalFree(message);
+	}
+}
+
+const char* LastError::Message()
+{
+	return message ? message : "Unknown error (FormatMessageA failed).";
+}
+
 void IFileBase::Save(const char* filename)
 {
 	size_t size = Size();
@@ -40,7 +59,7 @@ void IFileBase::Save(const char* filename)
 	}
 }
 
-bool IFileBase::Load(const char* filename, bool allow_undersize)
+size_t IFileBase::Load(const char* filename, bool allow_undersize)
 {
 	size_t size = Size();
 
@@ -56,41 +75,39 @@ bool IFileBase::Load(const char* filename, bool allow_undersize)
 		Error("Error opening file %s.\n\nError code %d: %s", filename, errno, error);
 		return false;
 	}
-	else
+
+	char* buffer = new char[size];
+
+	fseek(file, 0, SEEK_END);
+	size_t len = ftell(file);
+	fseek(file, 0, SEEK_SET);
+
+	if (len > size || (!allow_undersize && len < size))
 	{
-		char* buffer = new char[size];
-
-		fseek(file, 0, SEEK_END);
-		size_t len = ftell(file);
-		fseek(file, 0, SEEK_SET);
-
-		if (len > size || (!allow_undersize && len < size))
-		{
-			fclose(file);
-			Error("Error opening file %s.\n\nInvalid file length - expected %d, got %d.", filename, size, len);
-			return false;
-		}
-
-		fread_s(buffer, len, 1, len, file);
 		fclose(file);
-
-		if (!Validate())
-		{
-			char msg[512];
-			sprintf_s(msg, 512, "Error opening file %s.\n\n"
-				"The object you are trying to load has failed to validate, indicating it contains invalid (corrupt or otherwise unsafe) values.\n\nProceed?", filename);
-
-			if (MessageBoxA(NULL, msg, PROJECT_NAME, MB_ICONWARNING | MB_YESNO | MB_SYSTEMMODAL) != IDYES)
-			{
-				return false;
-			}
-		}
-
-		// Offset from vtable pointer
-		memcpy((char*)this + 4, buffer, len);
+		Error("Error opening file %s.\n\nInvalid file length - expected %d, got %d.", filename, size, len);
+		return 0;
 	}
 
-	return true;
+	fread_s(buffer, len, 1, len, file);
+	fclose(file);
+
+	if (!Validate())
+	{
+		char msg[512];
+		sprintf_s(msg, 512, "Error opening file %s.\n\n"
+			"The object you are trying to load has failed to validate, indicating it contains invalid (corrupt or otherwise unsafe) values.\n\nProceed?", filename);
+
+		if (MessageBoxA(NULL, msg, PROJECT_NAME, MB_ICONWARNING | MB_YESNO | MB_SYSTEMMODAL) != IDYES)
+		{
+			return 0;
+		}
+	}
+
+	// Offset from vtable pointer
+	memcpy((char*)this + 4, buffer, len);
+
+	return len;
 }
 
 void IFileBase::SaveDialog(const char* title, const char* filter, const char* default_extension)
@@ -113,7 +130,7 @@ void IFileBase::SaveDialog(const char* title, const char* filter, const char* de
 	}
 }
 
-bool IFileBase::LoadDialog(const char* title, const char* filter, const char* default_extension, bool allow_undersize)
+size_t IFileBase::LoadDialog(const char* title, const char* filter, const char* default_extension, bool allow_undersize)
 {
 	char filename[MAX_PATH] { 0 };
 
@@ -129,7 +146,7 @@ bool IFileBase::LoadDialog(const char* title, const char* filter, const char* de
 
 	if (GetOpenFileNameA(&ofn))
 	{
-		return this->Load(ofn.lpstrFile);
+		return this->Load(ofn.lpstrFile, allow_undersize);
 	}
 
 	return false;

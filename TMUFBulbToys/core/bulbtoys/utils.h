@@ -17,6 +17,18 @@
 
 /* ===== Structs ===== */
 
+// Simple RAII implementation of GetLastError
+class LastError
+{
+	LPSTR message = nullptr;
+public:
+	LastError(DWORD last_error);
+	LastError() : LastError(GetLastError()) {}
+	~LastError();
+
+	const char* Message();
+};
+
 // Base interface for all struct-files. Use IFile instead, which automatically implements Size() for you
 struct IFileBase
 {
@@ -34,10 +46,10 @@ struct IFileBase
 	virtual void SaveDialog(const char* title = "Save File", const char* filter = "All Files (*.*)\0*.*\0", const char* default_extension = nullptr) final;
 
 	// Load the struct from a file named filename. Object remains unchanged if this returns false!
-	virtual bool Load(const char* filename, bool allow_undersize = false) final;
+	virtual size_t Load(const char* filename, bool allow_undersize = false) final;
 
 	// Prompt the user which file to load. Object remains unchanged if this returns false!
-	virtual bool LoadDialog(const char* title = "Load File", const char* filter = "All Files (*.*)\0*.*\0", const char* default_extension = nullptr,
+	virtual size_t LoadDialog(const char* title = "Load File", const char* filter = "All Files (*.*)\0*.*\0", const char* default_extension = nullptr,
 		bool allow_undersize = false) final;
 };
 
