@@ -78,7 +78,7 @@ class GUI
 
 		struct ImageBuffer : public IFile<ImageBuffer>
 		{
-			char data[max_size]{ 0 };
+			char data[max_size] { 0 };
 
 			bool Validate() override final { return true; }
 		};

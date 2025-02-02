@@ -107,6 +107,8 @@ size_t IFileBase::Load(const char* filename, bool allow_undersize)
 	// Offset from vtable pointer
 	memcpy((char*)this + 4, buffer, len);
 
+	delete[] buffer;
+
 	return len;
 }
 
