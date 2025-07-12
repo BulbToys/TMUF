@@ -30,13 +30,28 @@ namespace profile
 
 				ImGui::Separator();
 
+				bool reset_max_len = false;
 				static int nick_max_len = 45;
+				static bool oversize_nick = false;
+				if (ImGui::Checkbox("Enable oversize nicknames (UNSUPPORTED)", &oversize_nick))
+				{
+					if (!oversize_nick)
+					{
+						reset_max_len = true;
+						nick_max_len = 45;
+					}
+				}
+
+				ImGui::BeginDisabled(!oversize_nick);
+
 				ImGui::Text("EntryNickname MaxLength (default: 45)");
-				if (ImGui::SliderInt("##NickMaxLen", &nick_max_len, 0, 75))
+				if (ImGui::SliderInt("##NickMaxLen", &nick_max_len, 0, 75) || reset_max_len)
 				{
 					uintptr_t entry_nick = TMUF::BulbToys_GetControlFromFrame("FrameProfile2", "EntryNickName");
 					Write<int>(entry_nick + 0x150, nick_max_len);
 				}
+
+				ImGui::EndDisabled();
 
 				static bool unlimited_painter_text = false;
 				if (ImGui::Checkbox("Unlimited painter text", &unlimited_painter_text))
