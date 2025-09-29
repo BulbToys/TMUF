@@ -51,19 +51,16 @@ namespace stats
 		*stats = nullptr;
 		int count = 0;
 
+		int total_results = 0;
+		unsigned int total_time = 0;
+		unsigned int total_edit_time = 0;
+		unsigned int total_race_time = 0;
+		unsigned int total_net_time = 0;
+
 		virtual bool Draw() override final
 		{
 			if (ImGui::BulbToys_Menu("Stats"))
 			{
-				ImGui::Text("Search by Track Name:");
-				ImGui::InputText("##StatsSearchName", search_name, IM_ARRAYSIZE(search_name));
-
-				ImGui::Text("Search by Author Name:");
-				ImGui::InputText("##StatsSearchAuthor", search_author, IM_ARRAYSIZE(search_author));
-
-				ImGui::Text("Search by Environment:");
-				ImGui::InputText("##StatsSearchEnvi", search_envi, IM_ARRAYSIZE(search_envi));
-
 				if (ImGui::Button("Reload Data"))
 				{
 					if (stats)
@@ -75,6 +72,28 @@ namespace stats
 				}
 				ImGui::SameLine();
 				ImGui::Text("Total race count: %d", count);
+
+				ImGui::Separator();
+
+				ImGui::Text("Search by Track Name:");
+				ImGui::InputText("##StatsSearchName", search_name, IM_ARRAYSIZE(search_name));
+
+				ImGui::Text("Search by Author Name:");
+				ImGui::InputText("##StatsSearchAuthor", search_author, IM_ARRAYSIZE(search_author));
+
+				ImGui::Text("Search by Environment:");
+				ImGui::InputText("##StatsSearchEnvi", search_envi, IM_ARRAYSIZE(search_envi));
+
+				ImGui::Separator();
+
+				// these results will be inaccurate by a single frame, but whatever lol
+				ImGui::Text("Search results: %d", total_results);
+				ImGui::Text("Total playtime: %u:%02u:%02u", total_time / 3600, (total_time / 60) % 60, total_time % 60);
+				ImGui::Text("Total edit time: %u:%02u:%02u", total_edit_time / 3600, (total_edit_time / 60) % 60, total_edit_time % 60);
+				ImGui::Text("Total race time: %u:%02u:%02u", total_race_time / 3600, (total_race_time / 60) % 60, total_race_time % 60);
+				ImGui::Text("Total net time: %u:%02u:%02u", total_net_time / 3600, (total_net_time / 60) % 60, total_net_time % 60);
+
+				ImGui::Separator();
 
 				if (!stats)
 				{
@@ -112,6 +131,12 @@ namespace stats
 						}
 					}
 				}
+
+				total_results = 0;
+				total_time = 0;
+				total_edit_time = 0;
+				total_race_time = 0;
+				total_net_time = 0;
 
 				if (stats)
 				{
@@ -251,13 +276,18 @@ namespace stats
 							});
 						}
 
-						int displayed_row = 1;
 						for (int row = 0; row < count; row++)
 						{
 							if (!stats[row].FitsCriteria(search_name, search_author, search_envi))
 							{
 								continue;
 							}
+
+							total_results++;
+							total_time += stats[row].total_time;
+							total_edit_time += stats[row].edit_time;
+							total_race_time += stats[row].race_time;
+							total_net_time += stats[row].net_time;
 
 							ImGui::TableNextRow();
 							for (int column = 0; column < 8; column++)
@@ -266,7 +296,7 @@ namespace stats
 
 								switch (column)
 								{
-									case 0: ImGui::Text("%d", displayed_row++); break;
+									case 0: ImGui::Text("%d", total_results); break;
 									case 1: ImGui::TMUF_TextEx(stats[row].slices, stats[row].name_raw); break;
 									case 2: ImGui::Text("%s", stats[row].author.psz); break; // can use TMUF_Text but it's wasteful and unnecessary 99% of the time
 									case 3: ImGui::Text("%s", stats[row].envi.psz); break;
